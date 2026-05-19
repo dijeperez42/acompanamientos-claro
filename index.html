@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>Supervisión de Terreno – Claro</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -14,81 +13,69 @@
   --r:12px;--rs:8px;
 }
 body{background:var(--bg);color:var(--text);font-family:system-ui;}
-button,select,textarea{font-family:inherit;}
-.hide{display:none;}
+button,select,textarea,input{font-family:inherit;}
 
 /* ===== LOGIN ===== */
 #login{
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  padding:2rem;
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:2rem;
 }
-
-/* Logo centrado */
 .logo-wrap{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  margin-bottom:1.5rem;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;margin-bottom:1.5rem;
 }
-.logo-wrap img{
-  width:140px;         /* ajustá este valor según el tamaño real del PNG */
-  height:auto;
-  display:block;
-  object-fit:contain;
-}
-/* Fallback si el PNG no carga */
+.logo-wrap img{width:140px;height:auto;display:block;object-fit:contain;}
 .logo-fallback{
-  display:none;
-  font-size:2rem;
-  font-weight:800;
-  color:var(--red);
-  letter-spacing:2px;
+  display:none;font-size:2rem;font-weight:800;
+  color:var(--red);letter-spacing:2px;
 }
-
 .lcard{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:var(--r);
-  padding:1.75rem;
-  width:100%;
-  max-width:360px;
-  box-shadow:0 8px 32px rgba(0,0,0,.4);
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r);padding:1.75rem;width:100%;
+  max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.4);
 }
-label{font-size:12px;color:var(--text2);display:block;}
-select,textarea{
-  width:100%;
-  margin-top:6px;
-  margin-bottom:14px;
-  padding:10px;
-  border-radius:var(--rs);
-  border:1px solid var(--border);
-  background:#1a1d27;
-  color:var(--text);
+.lcard label{font-size:12px;color:var(--text2);display:block;margin-bottom:6px;}
+.lcard input{
+  width:100%;margin-bottom:14px;padding:10px;
+  border-radius:var(--rs);border:1px solid var(--border);
+  background:#1a1d27;color:var(--text);font-size:14px;
 }
-textarea{resize:vertical;min-height:80px;}
-.btn{width:100%;padding:11px;border:none;border-radius:var(--rs);cursor:pointer;font-size:14px;font-weight:600;}
+.lcard input:focus{outline:1px solid var(--red);}
+
+/* ===== BOTONES ===== */
+.btn{
+  width:100%;padding:11px;border:none;border-radius:var(--rs);
+  cursor:pointer;font-size:14px;font-weight:600;
+}
 .bp{background:var(--red);color:#fff;transition:opacity .2s;}
 .bp:hover{opacity:.85;}
+.btn-back{
+  background:rgba(255,255,255,.07);color:var(--text2);
+  border:1px solid var(--border);margin-top:.6rem;
+  width:100%;padding:11px;border-radius:var(--rs);
+  cursor:pointer;font-size:14px;font-weight:600;
+}
+.btn-back:hover{background:rgba(255,255,255,.12);}
 
 /* ===== APP ===== */
 #app{display:none;flex-direction:column;min-height:100vh;}
 .topbar{
-  background:var(--card);
-  border-bottom:1px solid var(--border);
-  padding:12px 16px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+  background:var(--card);border-bottom:1px solid var(--border);
+  padding:12px 16px;display:flex;justify-content:space-between;align-items:center;
 }
-.topbar button{width:auto;padding:6px 14px;background:rgba(255,255,255,.08);color:var(--text);border:1px solid var(--border);border-radius:var(--rs);}
+.topbar-btn{
+  padding:6px 14px;background:rgba(255,255,255,.08);
+  color:var(--text);border:1px solid var(--border);
+  border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:600;
+}
 .content{flex:1;padding:1rem;overflow-y:auto;}
+
+/* ===== NAV INFERIOR ===== */
 .bnav{display:flex;background:var(--card);border-top:1px solid var(--border);}
-.ni{flex:1;padding:12px 6px;background:none;border:none;color:var(--text2);cursor:pointer;font-size:13px;}
+.ni{
+  flex:1;padding:12px 4px;background:none;border:none;
+  color:var(--text2);cursor:pointer;font-size:12px;
+}
 .ni.active{color:var(--red);font-weight:700;border-top:2px solid var(--red);}
 
 /* ===== CARDS ===== */
@@ -98,90 +85,100 @@ textarea{resize:vertical;min-height:80px;}
 .bg{background:rgba(34,197,94,.15);color:var(--green);}
 .ba{background:rgba(245,158,11,.15);color:var(--amber);}
 .br{background:rgba(239,68,68,.15);color:var(--red);}
+
+select,textarea{
+  width:100%;margin-top:6px;margin-bottom:14px;padding:10px;
+  border-radius:var(--rs);border:1px solid var(--border);
+  background:#1a1d27;color:var(--text);font-size:14px;
+}
+textarea{resize:vertical;min-height:80px;}
 </style>
 </head>
-
 <body>
 
-<!-- LOGIN -->
+<!-- ===== LOGIN ===== -->
 <div id="login">
-
   <div class="logo-wrap">
-    <!--
-      OPCIÓN 1 (recomendada para GitHub Pages):
-      Si el HTML y el PNG están en la misma carpeta del repo, esta ruta funciona.
-      Si el PNG está en una subcarpeta, ajustá: src="assets/logo-claro.png"
-    -->
-    <img
-      src="logo-claro.png"
-      alt="Claro"
-      onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
-    >
-    <!-- Se muestra solo si el PNG no carga -->
+    <img src="logo-claro.png" alt="Claro"
+      onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
     <span class="logo-fallback">CLARO</span>
   </div>
-
   <div class="lcard">
     <label>Usuario</label>
-    <input type="text" id="userInput" placeholder="tu usuario" autocomplete="username"
-      style="width:100%;margin-top:6px;margin-bottom:14px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:#1a1d27;color:#f0f2ff;font-size:14px;">
-    <label>Contraseña</label>
-    <input type="password" id="passInput" placeholder="••••••" autocomplete="current-password"
-      style="width:100%;margin-top:6px;margin-bottom:18px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:#1a1d27;color:#f0f2ff;font-size:14px;"
+    <input type="text" id="userInput" placeholder="tu usuario" autocomplete="username">
+    <label>Contrasena</label>
+    <input type="password" id="passInput" placeholder="..." autocomplete="current-password"
       onkeydown="if(event.key==='Enter') login()">
     <button class="btn bp" onclick="login()">Ingresar</button>
   </div>
 </div>
 
-<!-- APP -->
+<!-- ===== APP ===== -->
 <div id="app">
   <div class="topbar">
-    <strong id="userTitle"></strong>
-    <button class="btn" onclick="logout()">Salir</button>
+    <button class="topbar-btn" onclick="goBack()" title="Volver a Inicio">&#8592; Inicio</button>
+    <strong id="userTitle" style="font-size:13px;"></strong>
+    <button class="topbar-btn" onclick="logout()">Salir</button>
   </div>
 
   <div class="content" id="content"></div>
 
-  <div class="bnav" id="bnav">
-    <button class="ni active" onclick="go('home', event)">Inicio</button>
-    <button class="ni" onclick="go('new', event)">Nuevo</button>
-    <button class="ni" onclick="go('list', event)">Registros</button>
-    <button class="ni" id="btnExcel" onclick="exportExcel()">Excel</button>
-    <button class="ni" id="btnStats" style="display:none" onclick="go('stats', event)">Estadísticas</button>
+  <div class="bnav">
+    <button class="ni active" id="btn-home"  onclick="go('home',  event)">Inicio</button>
+    <button class="ni"        id="btn-new"   onclick="go('new',   event)">Nuevo</button>
+    <button class="ni"        id="btn-list"  onclick="go('list',  event)">Registros</button>
+    <button class="ni"        id="btn-excel" onclick="exportExcel()">Excel</button>
+    <button class="ni"        id="btn-stats" onclick="go('stats', event)">Estadisticas</button>
   </div>
 </div>
 
 <script>
 /* ===== DATOS ===== */
 const VENDEDORES = {
-  hugo:["Cisterna Camila","Rodriguez Maria Del Rosario","Santana Mayra Belen","Marcelo Mussatti","Albornoz Andres","Castro Mauro","Calvo Sofia Giselle","Hidalgo Eduardo"],
-  bernarda:["Garcia Ignacio Ariel","Alma Gloria Eliana","Picon Pamela Belen","Garcia Angeles Ivonne","Rivero Beatriz","Araya Fernando","Veron Romina","Ruiz Luz Martina","Toro Fabian","Guevara Hugo","Cisterna Noelia"],
-  franco:["Pia Ferrari","José Galván","Joaquín Pringles","Josué Elizondo"]
+  hugo:     ["Cisterna Camila","Rodriguez Maria Del Rosario","Santana Mayra Belen",
+             "Marcelo Mussatti","Albornoz Andres","Castro Mauro","Calvo Sofia Giselle","Hidalgo Eduardo"],
+  bernarda: ["Garcia Ignacio Ariel","Alma Gloria Eliana","Picon Pamela Belen",
+             "Garcia Angeles Ivonne","Rivero Beatriz","Araya Fernando","Veron Romina",
+             "Ruiz Luz Martina","Toro Fabian","Guevara Hugo","Cisterna Noelia"],
+  franco:   ["Pia Ferrari","Jose Galvan","Joaquin Pringles","Josue Elizondo"]
+};
+
+const CREDENCIALES = {
+  diego:    { pass:"claro2024",    key:"claro"    },
+  hugo:     { pass:"hugo2024",     key:"hugo"     },
+  bernarda: { pass:"bernarda2024", key:"bernarda" },
+  franco:   { pass:"franco2024",   key:"franco"   }
+};
+
+const NOMBRES = {
+  claro:    "Supervisor Claro - Diego Perez",
+  hugo:     "Supervisor Terreno - Hugo Orelo",
+  bernarda: "Supervisor Terreno - Bernarda Ponce",
+  franco:   "Supervisor Terreno - Franco Tolaba"
 };
 
 let USER = null;
 let DATA = JSON.parse(localStorage.getItem("registros_claro") || "[]");
 
-/* ===== LOGIN ===== */
-const CREDENCIALES = {
-  "diego":    { pass:"claro2024",    key:"claro"    },
-  "hugo":     { pass:"hugo2024",     key:"hugo"     },
-  "bernarda": { pass:"bernarda2024", key:"bernarda" },
-  "franco":   { pass:"franco2024",   key:"franco"   }
-};
-
+/* ===== LOGIN / LOGOUT ===== */
 function login(){
-  const u = document.getElementById("userInput").value.trim().toLowerCase();
-  const p = document.getElementById("passInput").value;
+  const u    = document.getElementById("userInput").value.trim().toLowerCase();
+  const pass = document.getElementById("passInput").value;
   const cred = CREDENCIALES[u];
-  if(!cred || cred.pass !== p) return alert("Usuario o contraseña incorrectos");
+  if(!cred || cred.pass !== pass){ alert("Usuario o contrasena incorrectos"); return; }
+
   USER = cred.key;
+  const esClaro = USER === "claro";
+
+  // Solo Supervisor Claro ve Excel y Estadisticas
+  document.getElementById("btn-excel").style.display = esClaro ? "" : "none";
+  document.getElementById("btn-stats").style.display = esClaro ? "" : "none";
+
+  document.getElementById("userTitle").textContent = NOMBRES[USER];
   document.getElementById("login").style.display = "none";
-  document.getElementById("app").style.display = "flex";
-  document.getElementById("userTitle").textContent =
-    u === "claro" ? "Supervisor Claro — Diego Perez" : "Supervisor Terreno — " + u.toUpperCase();
-  document.getElementById("btnStats").style.display = u === "claro" ? "" : "none";
-  document.getElementById("btnExcel").style.display = u === "claro" ? "" : "none";
+  document.getElementById("app").style.display    = "flex";
+
+  setActive("btn-home");
   renderHome();
 }
 
@@ -189,242 +186,234 @@ function logout(){
   USER = null;
   document.getElementById("userInput").value = "";
   document.getElementById("passInput").value = "";
-  document.getElementById("app").style.display = "none";
+  document.getElementById("app").style.display   = "none";
   document.getElementById("login").style.display = "flex";
 }
 
 /* ===== NAV ===== */
+function setActive(id){
+  document.querySelectorAll(".ni").forEach(function(b){ b.classList.remove("active"); });
+  var el = document.getElementById(id);
+  if(el) el.classList.add("active");
+}
+
 function go(view, evt){
-  document.querySelectorAll(".ni").forEach(b => b.classList.remove("active"));
-  if(evt && evt.target) evt.target.classList.add("active");
-  if(view === "home") renderHome();
-  if(view === "new")  renderNew();
-  if(view === "list") renderList();
-  if(view === "stats" && USER === "claro") renderStats();
+  if(evt && evt.currentTarget){
+    document.querySelectorAll(".ni").forEach(function(b){ b.classList.remove("active"); });
+    evt.currentTarget.classList.add("active");
+  }
+  if(view === "home")  renderHome();
+  if(view === "new")   renderNew();
+  if(view === "list")  renderList();
+  if(view === "stats") renderStats();
 }
 
-/* ===== VISTAS ===== */
+function goBack(){
+  setActive("btn-home");
+  renderHome();
+}
+
+/* ===== INICIO ===== */
 function renderHome(){
-  const v = DATA.filter(r => USER === "claro" || r.sup === USER);
-  document.getElementById("content").innerHTML = `
-    <div class="card">
-      <div style="color:var(--text2);font-size:13px;margin-bottom:.5rem;">Total registros</div>
-      <div class="stat">${v.length}</div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;">
-      <div class="card" style="text-align:center;">
-        <div class="badge bg">Bueno</div>
-        <div class="stat" style="color:var(--green)">${v.filter(r=>r.res==="Bueno").length}</div>
-      </div>
-      <div class="card" style="text-align:center;">
-        <div class="badge ba">Regular</div>
-        <div class="stat" style="color:var(--amber)">${v.filter(r=>r.res==="Regular").length}</div>
-      </div>
-      <div class="card" style="text-align:center;">
-        <div class="badge br">Malo</div>
-        <div class="stat" style="color:var(--red)">${v.filter(r=>r.res==="Malo").length}</div>
-      </div>
-    </div>`;
+  var v  = DATA.filter(function(r){ return USER === "claro" || r.sup === USER; });
+  var b  = v.filter(function(r){ return r.res === "Bueno"; }).length;
+  var re = v.filter(function(r){ return r.res === "Regular"; }).length;
+  var m  = v.filter(function(r){ return r.res === "Malo"; }).length;
+
+  document.getElementById("content").innerHTML =
+    '<div class="card">' +
+      '<div style="color:var(--text2);font-size:13px;margin-bottom:.5rem;">Total registros</div>' +
+      '<div class="stat">' + v.length + '</div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;">' +
+      '<div class="card" style="text-align:center;"><div class="badge bg">Bueno</div><div class="stat" style="color:var(--green)">' + b + '</div></div>' +
+      '<div class="card" style="text-align:center;"><div class="badge ba">Regular</div><div class="stat" style="color:var(--amber)">' + re + '</div></div>' +
+      '<div class="card" style="text-align:center;"><div class="badge br">Malo</div><div class="stat" style="color:var(--red)">' + m + '</div></div>' +
+    '</div>';
 }
 
+/* ===== NUEVO ===== */
 function renderNew(){
-  const vends = USER === "claro"
-    ? Object.values(VENDEDORES).flat()
+  var vends = USER === "claro"
+    ? Object.values(VENDEDORES).reduce(function(a,b){ return a.concat(b); }, [])
     : VENDEDORES[USER];
 
-  document.getElementById("content").innerHTML = `
-    <div class="card">
-      <label>Vendedor</label>
-      <select id="v">${vends.map(x => `<option>${x}</option>`).join("")}</select>
+  var opts = vends.map(function(x){ return '<option>' + x + '</option>'; }).join("");
 
-      <label>Resultado</label>
-      <select id="r"><option>Bueno</option><option>Regular</option><option>Malo</option></select>
-
-      <label>Observaciones</label>
-      <textarea id="o" placeholder="Escribí tus observaciones..."></textarea>
-
-      <button class="btn bp" onclick="save()">Guardar</button>
-    </div>`;
+  document.getElementById("content").innerHTML =
+    '<div class="card">' +
+      '<label style="font-size:12px;color:var(--text2);">Vendedor</label>' +
+      '<select id="v">' + opts + '</select>' +
+      '<label style="font-size:12px;color:var(--text2);">Resultado</label>' +
+      '<select id="r"><option>Bueno</option><option>Regular</option><option>Malo</option></select>' +
+      '<label style="font-size:12px;color:var(--text2);">Observaciones</label>' +
+      '<textarea id="o" placeholder="Escribi tus observaciones..."></textarea>' +
+      '<button class="btn bp" onclick="save()">Guardar</button>' +
+      '<button class="btn-back" onclick="goBack()">Atras</button>' +
+    '</div>';
 }
 
+/* ===== REGISTROS ===== */
 function renderList(){
-  const v = DATA.filter(r => USER === "claro" || r.sup === USER);
-  const html = v.length === 0
-    ? `<div class="card" style="color:var(--text2);text-align:center;">Sin registros aún</div>`
-    : v.slice().reverse().map(r => `
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem;">
-            <strong>${r.v}</strong>
-            <span class="badge ${r.res==="Bueno"?"bg":r.res==="Regular"?"ba":"br"}">${r.res}</span>
-          </div>
-          <div style="font-size:12px;color:var(--text2);">${r.f} · ${r.sup}</div>
-          ${r.o ? `<div style="margin-top:.5rem;font-size:13px;">${r.o}</div>` : ""}
-        </div>`).join("");
+  var v = DATA.filter(function(r){ return USER === "claro" || r.sup === USER; });
+  if(v.length === 0){
+    document.getElementById("content").innerHTML =
+      '<div class="card" style="color:var(--text2);text-align:center;">Sin registros aun</div>';
+    return;
+  }
+  var html = v.slice().reverse().map(function(r){
+    var cls = r.res==="Bueno"?"bg":r.res==="Regular"?"ba":"br";
+    return '<div class="card">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem;">' +
+        '<strong>' + r.v + '</strong>' +
+        '<span class="badge ' + cls + '">' + r.res + '</span>' +
+      '</div>' +
+      '<div style="font-size:12px;color:var(--text2);">' + r.f + ' - ' + r.sup + '</div>' +
+      (r.o ? '<div style="margin-top:.5rem;font-size:13px;">' + r.o + '</div>' : '') +
+    '</div>';
+  }).join("");
   document.getElementById("content").innerHTML = html;
 }
 
 /* ===== GUARDAR ===== */
 function save(){
-  const v = document.getElementById("v");
-  const r = document.getElementById("r");
-  const o = document.getElementById("o");
+  var v = document.getElementById("v");
+  var r = document.getElementById("r");
+  var o = document.getElementById("o");
   if(!v || !r) return;
   DATA.push({
-    f: new Date().toLocaleDateString("es-AR"),
+    f:   new Date().toLocaleDateString("es-AR"),
     sup: USER,
-    v: v.value,
+    v:   v.value,
     res: r.value,
-    o: o.value
+    o:   o.value
   });
   localStorage.setItem("registros_claro", JSON.stringify(DATA));
+  setActive("btn-home");
   renderHome();
-  // volver a home visualmente
-  document.querySelectorAll(".ni").forEach((b,i) => b.classList.toggle("active", i===0));
 }
 
-/* ===== ESTADÍSTICAS (solo Supervisor Claro) ===== */
+/* ===== ESTADISTICAS (solo Supervisor Claro) ===== */
 function renderStats(){
   if(USER !== "claro") return;
 
-  const SUPS = [
+  var SUPS = [
     { key:"hugo",     label:"Hugo Orelo" },
     { key:"bernarda", label:"Bernarda Ponce" },
     { key:"franco",   label:"Franco Tolaba" }
   ];
 
-  // Totales globales
-  const total = DATA.length;
-  const gB = DATA.filter(r=>r.res==="Bueno").length;
-  const gR = DATA.filter(r=>r.res==="Regular").length;
-  const gM = DATA.filter(r=>r.res==="Malo").length;
+  var total = DATA.length;
+  var gB = DATA.filter(function(r){ return r.res==="Bueno"; }).length;
+  var gR = DATA.filter(function(r){ return r.res==="Regular"; }).length;
+  var gM = DATA.filter(function(r){ return r.res==="Malo"; }).length;
 
-  // Construir cards por supervisor
-  const supCards = SUPS.map(s => {
-    const rows = DATA.filter(r => r.sup === s.key);
-    const n  = rows.length;
-    const b  = rows.filter(r=>r.res==="Bueno").length;
-    const re = rows.filter(r=>r.res==="Regular").length;
-    const m  = rows.filter(r=>r.res==="Malo").length;
-    const pB = n ? Math.round(b/n*100) : 0;
-    const pR = n ? Math.round(re/n*100) : 0;
-    const pM = n ? Math.round(m/n*100) : 0;
+  var supCards = SUPS.map(function(s){
+    var rows = DATA.filter(function(r){ return r.sup === s.key; });
+    var n  = rows.length;
+    var b  = rows.filter(function(r){ return r.res==="Bueno"; }).length;
+    var re = rows.filter(function(r){ return r.res==="Regular"; }).length;
+    var m  = rows.filter(function(r){ return r.res==="Malo"; }).length;
+    var pB = n ? Math.round(b/n*100)  : 0;
+    var pR = n ? Math.round(re/n*100) : 0;
+    var pM = n ? Math.round(m/n*100)  : 0;
+    var score = n ? Math.round((b + re*0.5) / n * 100) : 0;
+    var scoreColor = score>=70?"var(--green)":score>=40?"var(--amber)":"var(--red)";
 
-    // Score: peso ponderado (bueno=1, regular=0.5, malo=0)
-    const score = n ? Math.round((b + re*0.5) / n * 100) : 0;
-    const scoreColor = score >= 70 ? "var(--green)" : score >= 40 ? "var(--amber)" : "var(--red)";
-
-    return `
-      <div class="card" style="margin-bottom:.75rem;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
-          <div>
-            <div style="font-weight:700;font-size:15px;">${s.label}</div>
-            <div style="font-size:12px;color:var(--text2);">${n} acompañamiento${n!==1?"s":""}</div>
-          </div>
-          <div style="text-align:right;">
-            <div style="font-size:11px;color:var(--text2);">Score</div>
-            <div style="font-size:1.6rem;font-weight:800;color:${scoreColor};line-height:1;">${score}%</div>
-          </div>
-        </div>
-
-        <!-- Barra apilada -->
-        <div style="height:14px;border-radius:7px;overflow:hidden;display:flex;margin-bottom:.6rem;background:rgba(255,255,255,.05);">
-          ${pB ? `<div style="width:${pB}%;background:var(--green);transition:width .6s;"></div>` : ""}
-          ${pR ? `<div style="width:${pR}%;background:var(--amber);transition:width .6s;"></div>` : ""}
-          ${pM ? `<div style="width:${pM}%;background:var(--red);transition:width .6s;"></div>`   : ""}
-        </div>
-
-        <!-- Leyenda -->
-        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
-          <span class="badge bg">✔ ${b} Bueno${b!==1?"s":""} (${pB}%)</span>
-          <span class="badge ba">~ ${re} Regular${re!==1?"es":""} (${pR}%)</span>
-          <span class="badge br">✖ ${m} Malo${m!==1?"s":""} (${pM}%)</span>
-        </div>
-      </div>`;
+    return '<div class="card">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">' +
+        '<div>' +
+          '<div style="font-weight:700;font-size:15px;">' + s.label + '</div>' +
+          '<div style="font-size:12px;color:var(--text2);">' + n + ' acompañamiento' + (n!==1?"s":"") + '</div>' +
+        '</div>' +
+        '<div style="text-align:right;">' +
+          '<div style="font-size:11px;color:var(--text2);">Score</div>' +
+          '<div style="font-size:1.6rem;font-weight:800;color:' + scoreColor + ';line-height:1;">' + score + '%</div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="height:14px;border-radius:7px;overflow:hidden;display:flex;margin-bottom:.6rem;background:rgba(255,255,255,.05);">' +
+        (pB?'<div style="width:'+pB+'%;background:var(--green);"></div>':"") +
+        (pR?'<div style="width:'+pR+'%;background:var(--amber);"></div>':"") +
+        (pM?'<div style="width:'+pM+'%;background:var(--red);"></div>':"") +
+      '</div>' +
+      '<div style="display:flex;gap:.5rem;flex-wrap:wrap;">' +
+        '<span class="badge bg">OK ' + b + ' Bueno' + (b!==1?"s":"") + ' (' + pB + '%)</span>' +
+        '<span class="badge ba">~ ' + re + ' Regular' + (re!==1?"es":"") + ' (' + pR + '%)</span>' +
+        '<span class="badge br">X ' + m + ' Malo' + (m!==1?"s":"") + ' (' + pM + '%)</span>' +
+      '</div>' +
+    '</div>';
   }).join("");
 
-  // Gráfico de barras SVG — comparativa entre supervisores
-  const maxN = Math.max(...SUPS.map(s => DATA.filter(r=>r.sup===s.key).length), 1);
-  const barW = 54, gap = 24, svgW = SUPS.length*(barW+gap)+gap, svgH = 130;
+  // SVG grafico barras
+  var maxN = 1;
+  SUPS.forEach(function(s){
+    var n = DATA.filter(function(r){ return r.sup===s.key; }).length;
+    if(n > maxN) maxN = n;
+  });
+  var barW=54, gap=24, svgW=SUPS.length*(barW+gap)+gap, svgH=130;
 
-  const svgBars = SUPS.map((s, i) => {
-    const rows = DATA.filter(r=>r.sup===s.key);
-    const n  = rows.length;
-    const b  = rows.filter(r=>r.res==="Bueno").length;
-    const re = rows.filter(r=>r.res==="Regular").length;
-    const m  = rows.filter(r=>r.res==="Malo").length;
-    const x  = gap + i*(barW+gap);
-    const maxH = svgH - 30;
-
-    // segmentos apilados de arriba a abajo: Malo, Regular, Bueno
-    const hB = n ? Math.round(b/maxN*maxH)  : 0;
-    const hR = n ? Math.round(re/maxN*maxH) : 0;
-    const hM = n ? Math.round(m/maxN*maxH)  : 0;
-    const totalH = hB+hR+hM;
-    const yBase = svgH - 18;
-
-    const firstName = s.label.split(" ")[0];
-    return `
-      <g>
-        ${hM ? `<rect x="${x}" y="${yBase-totalH}" width="${barW}" height="${hM}" fill="#e60000" rx="3"/>` : ""}
-        ${hR ? `<rect x="${x}" y="${yBase-totalH+hM}" width="${barW}" height="${hR}" fill="#f59e0b"/>` : ""}
-        ${hB ? `<rect x="${x}" y="${yBase-hB}" width="${barW}" height="${hB}" fill="#22c55e" rx="0"/>` : ""}
-        ${totalH === 0 ? `<rect x="${x}" y="${yBase-4}" width="${barW}" height="4" fill="rgba(255,255,255,.1)" rx="2"/>` : ""}
-        <text x="${x+barW/2}" y="${svgH-2}" text-anchor="middle" fill="#8b90a8" font-size="11" font-family="system-ui">${firstName}</text>
-        ${n>0 ? `<text x="${x+barW/2}" y="${yBase-totalH-5}" text-anchor="middle" fill="#f0f2ff" font-size="11" font-weight="700" font-family="system-ui">${n}</text>` : ""}
-      </g>`;
+  var svgBars = SUPS.map(function(s, i){
+    var rows = DATA.filter(function(r){ return r.sup===s.key; });
+    var n  = rows.length;
+    var b  = rows.filter(function(r){ return r.res==="Bueno"; }).length;
+    var re = rows.filter(function(r){ return r.res==="Regular"; }).length;
+    var m  = rows.filter(function(r){ return r.res==="Malo"; }).length;
+    var x  = gap + i*(barW+gap);
+    var maxH = svgH-30, yBase = svgH-18;
+    var hB = n?Math.round(b/maxN*maxH):0;
+    var hR = n?Math.round(re/maxN*maxH):0;
+    var hM = n?Math.round(m/maxN*maxH):0;
+    var totalH = hB+hR+hM;
+    var firstName = s.label.split(" ")[0];
+    return '<g>' +
+      (hM?'<rect x="'+x+'" y="'+(yBase-totalH)+'" width="'+barW+'" height="'+hM+'" fill="#e60000" rx="3"/>':"") +
+      (hR?'<rect x="'+x+'" y="'+(yBase-totalH+hM)+'" width="'+barW+'" height="'+hR+'" fill="#f59e0b"/>':"") +
+      (hB?'<rect x="'+x+'" y="'+(yBase-hB)+'" width="'+barW+'" height="'+hB+'" fill="#22c55e"/>':"") +
+      (!totalH?'<rect x="'+x+'" y="'+(yBase-4)+'" width="'+barW+'" height="4" fill="rgba(255,255,255,.1)" rx="2"/>':"") +
+      '<text x="'+(x+barW/2)+'" y="'+(svgH-2)+'" text-anchor="middle" fill="#8b90a8" font-size="11" font-family="system-ui">'+firstName+'</text>' +
+      (n?'<text x="'+(x+barW/2)+'" y="'+(yBase-totalH-5)+'" text-anchor="middle" fill="#f0f2ff" font-size="11" font-weight="700" font-family="system-ui">'+n+'</text>':"") +
+    '</g>';
   }).join("");
 
-  const svg = `
-    <svg viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
-      ${svgBars}
-    </svg>`;
-
-  document.getElementById("content").innerHTML = `
-    <!-- Resumen global -->
-    <div class="card" style="margin-bottom:.75rem;">
-      <div style="color:var(--text2);font-size:12px;margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.5px;">Resumen global</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.4rem;text-align:center;">
-        <div><div style="font-size:1.4rem;font-weight:800;">${total}</div><div style="font-size:10px;color:var(--text2);">Total</div></div>
-        <div><div style="font-size:1.4rem;font-weight:800;color:var(--green);">${gB}</div><div style="font-size:10px;color:var(--text2);">Buenos</div></div>
-        <div><div style="font-size:1.4rem;font-weight:800;color:var(--amber);">${gR}</div><div style="font-size:10px;color:var(--text2);">Regulares</div></div>
-        <div><div style="font-size:1.4rem;font-weight:800;color:var(--red);">${gM}</div><div style="font-size:10px;color:var(--text2);">Malos</div></div>
-      </div>
-    </div>
-
-    <!-- Gráfico comparativo -->
-    <div class="card" style="margin-bottom:.75rem;">
-      <div style="color:var(--text2);font-size:12px;margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.5px;">Acompañamientos por supervisor</div>
-      ${svg}
-      <div style="display:flex;gap:1rem;justify-content:center;margin-top:.6rem;flex-wrap:wrap;">
-        <span style="font-size:11px;color:var(--green);">■ Bueno</span>
-        <span style="font-size:11px;color:var(--amber);">■ Regular</span>
-        <span style="font-size:11px;color:var(--red);">■ Malo</span>
-      </div>
-    </div>
-
-    <!-- Cards por supervisor -->
-    <div style="color:var(--text2);font-size:12px;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.5px;padding:0 .1rem;">Detalle por supervisor</div>
-    ${supCards}
-    ${DATA.length === 0 ? '<div class="card" style="color:var(--text2);text-align:center;">Sin datos aún. Cargá acompañamientos primero.</div>' : ""}
-  `;
+  document.getElementById("content").innerHTML =
+    '<div class="card">' +
+      '<div style="color:var(--text2);font-size:12px;margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.5px;">Resumen global</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.4rem;text-align:center;">' +
+        '<div><div style="font-size:1.4rem;font-weight:800;">' + total + '</div><div style="font-size:10px;color:var(--text2);">Total</div></div>' +
+        '<div><div style="font-size:1.4rem;font-weight:800;color:var(--green);">' + gB + '</div><div style="font-size:10px;color:var(--text2);">Buenos</div></div>' +
+        '<div><div style="font-size:1.4rem;font-weight:800;color:var(--amber);">' + gR + '</div><div style="font-size:10px;color:var(--text2);">Regulares</div></div>' +
+        '<div><div style="font-size:1.4rem;font-weight:800;color:var(--red);">' + gM + '</div><div style="font-size:10px;color:var(--text2);">Malos</div></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<div style="color:var(--text2);font-size:12px;margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.5px;">Acompanamientos por supervisor</div>' +
+      '<svg viewBox="0 0 ' + svgW + ' ' + svgH + '" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">' + svgBars + '</svg>' +
+      '<div style="display:flex;gap:1rem;justify-content:center;margin-top:.6rem;flex-wrap:wrap;">' +
+        '<span style="font-size:11px;color:var(--green);">Bueno</span>' +
+        '<span style="font-size:11px;color:var(--amber);">Regular</span>' +
+        '<span style="font-size:11px;color:var(--red);">Malo</span>' +
+      '</div>' +
+    '</div>' +
+    '<div style="color:var(--text2);font-size:12px;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.5px;padding:0 .1rem;">Detalle por supervisor</div>' +
+    supCards +
+    (DATA.length===0?'<div class="card" style="color:var(--text2);text-align:center;">Sin datos aun.</div>':"");
 }
 
 /* ===== EXCEL ===== */
 function exportExcel(){
-  let h = "<table border='1'><tr><th>Fecha</th><th>Supervisor</th><th>Vendedor</th><th>Resultado</th><th>Observaciones</th></tr>";
-  DATA.forEach(r => {
-    const c = r.res==="Bueno" ? "#a8d08d" : r.res==="Regular" ? "#ffe699" : "#f4b084";
-    h += `<tr><td>${r.f}</td><td>${r.sup}</td><td>${r.v}</td><td style="background:${c}">${r.res}</td><td>${r.o}</td></tr>`;
+  if(USER !== "claro") return;
+  var h = "<table border='1'><tr><th>Fecha</th><th>Supervisor</th><th>Vendedor</th><th>Resultado</th><th>Observaciones</th></tr>";
+  DATA.forEach(function(r){
+    var c = r.res==="Bueno"?"#a8d08d":r.res==="Regular"?"#ffe699":"#f4b084";
+    h += "<tr><td>" + r.f + "</td><td>" + r.sup + "</td><td>" + r.v + "</td><td style='background:" + c + "'>" + r.res + "</td><td>" + r.o + "</td></tr>";
   });
   h += "</table>";
-  const b = new Blob([h], {type:"application/vnd.ms-excel"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(b);
+  var blob = new Blob([h], {type:"application/vnd.ms-excel"});
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
   a.download = "acompanamientos_claro.xls";
   a.click();
 }
 </script>
-
 </body>
 </html>
-
