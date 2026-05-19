@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Supervisión de Terreno – Claro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+/* ====== ESTILOS ORIGINALES (SIN CAMBIOS) ====== */
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0f1117;--bg2:#1a1d27;--bg3:#222636;--card:#1e2235;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#f0f2ff;--text2:#8b90a8;--text3:#5a5f75;
+  --accent:#e60000;--accent2:#c50000;
+  --green:#22c55e;--amber:#f59e0b;--red:#ef4444;
+  --r:12px;--rs:8px;
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;}
+.hide{display:none!important;}
+#login{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;}
+.logo-wrap{margin-bottom:1rem;}
+.logo-wrap img{width:120px;}
+h1{font-size:22px;font-weight:700;text-align:center;}
+.sub{color:var(--text2);font-size:13px;text-align:center;margin:6px 0 2rem;}
+.lcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;width:100%;max-width:360px;}
+.fg{margin-bottom:1rem;}
+.fg label{display:block;font-size:11px;color:var(--text2);text-transform:uppercase;margin-bottom:6px;}
+.fg select,.fg textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);padding:10px;color:var(--text);}
+.btn{width:100%;padding:10px;border:none;border-radius:var(--rs);cursor:pointer;}
+.bp{background:var(--accent);color:white;}
+.bp:hover{background:var(--accent2);}
+#app{display:none;flex-direction:column;min-height:100vh;}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 1rem;height:52px;display:flex;align-items:center;justify-content:space-between;}
+.content{flex:1;padding:1rem;overflow-y:auto;}
+.bnav{background:var(--card);border-top:1px solid var(--border);display:flex;}
+.ni{flex:1;padding:10px;color:var(--text2);background:none;border:none;}
+.ni.on{color:var(--accent);}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1rem;margin-bottom:.75rem;}
+.badge{padding:4px 10px;border-radius:20px;font-size:11px;}
+.bg{background:rgba(34,197,94,.15);color:var(--green);}
+.ba{background:rgba(245,158,11,.15);color:var(--amber);}
+.br{background:rgba(239,68,68,.15);color:var(--red);}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="logo-wrap">
+    <img src="logo-claro.png" alt="Claro">
+  </div>
+  <h1>Supervisión de Terreno</h1>
+  <p class="sub">Acompañamientos y relevamientos</p>
+
+  <div class="lcard">
+    <div class="fg">
+      <label>Usuario</label>
+      <select id="userSel">
+        <option value="">— seleccionar —</option>
+        <option value="claro_hugo">Supervisor Claro — Hugo Orelo</option>
+        <option value="claro_bernarda">Supervisor Claro — Bernarda Ponce</option>
+        <option value="claro_franco">Supervisor Claro — Franco Tolaba</option>
+        <option value="terreno_hugo">Supervisor Terreno — Hugo Orelo</option>
+        <option value="terreno_bernarda">Supervisor Terreno — Bernarda Ponce</option>
+        <option value="terreno_franco">Supervisor Terreno — Franco Tolaba</option>
+      </select>
+    </div>
+    <button class="btn bp" onclick="login()">Ingresar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <strong id="tbUser"></strong>
+    <button class="btn" onclick="logout()">Salir</button>
+  </div>
+
+  <div class="content" id="content"></div>
+
+  <div class="bnav">
+    <button class="ni on" onclick="home()">Inicio</button>
+    <button class="ni" onclick="form()">Nuevo</button>
+    <button class="ni" onclick="list()">Registros</button>
+    <button class="ni" onclick="excel()">Excel</button>
+  </div>
+</div>
+
+<script>
+/* ===== LIMPIEZA TOTAL (solo la primera vez) ===== */
+if(!localStorage.getItem("claro_init")){
+  localStorage.removeItem("registros_claro");
+  localStorage.setItem("claro_init","ok");
+}
+
+/* ===== DATOS ===== */
+const DATA = JSON.parse(localStorage.getItem("registros_claro")||"[]");
+
+const SUPS = {
+  hugo:["Cisterna Camila","Rodriguez Maria Del Rosario","Santana Mayra Belen","Marcelo Mussatti","Albornoz Andres","Castro Mauro","Calvo Sofia Giselle","Hidalgo Eduardo"],
+  bernarda:["Garcia Ignacio Ariel","Alma Gloria Eliana","Picon Pamela Belen","Garcia Angeles Ivonne","Rivero Beatriz","Araya Fernando","Veron Romina","Ruiz Luz Martina","Toro Fabian","Guevara Hugo","Cisterna Noelia"],
+  franco:["Pia Ferrari","José Galván","Joaquín Pringles","Josué Elizondo"]
+};
+
+let USER={};
+
+/* ===== LOGIN ===== */
+function login(){
+  const v=document.getElementById("userSel").value;
+  if(!v) return alert("Seleccioná un usuario");
+  const [tipo,key]=v.split("_");
+  USER={tipo,key};
+  document.getElementById("login").style.display="none";
+  document.getElementById("app").style.display="flex";
+  document.getElementById("tbUser").textContent =
+    (tipo==="claro"?"Supervisor Claro":"Supervisor Terreno")+" — "+key.toUpperCase();
+  home();
+}
+function logout(){
+  USER={};
+  document.getElementById("app").style.display="none";
+  document.getElementById("login").style.display="flex";
+}
+
+/* ===== HOME ===== */
+function home(){
+  const vis = DATA.filter(r=>USER.tipo==="claro"||r.sup===USER.key);
+  content.innerHTML=`
+    <div class="card">
+      Total registros: ${vis.length}<br>
+      🟢 ${vis.filter(r=>r.res==="Bueno").length}
+      🟡 ${vis.filter(r=>r.res==="Regular").length}
+      🔴 ${vis.filter(r=>r.res==="Malo").length}
+    </div>`;
+}
+
+/* ===== FORM ===== */
+function form(){
+  const vends = USER.tipo==="terreno"?SUPS[USER.key]:Object.values(SUPS).flat();
+  content.innerHTML=`
+    <div class="card">
+      <label>Vendedor</label>
+      <select id="v">${vends.map(v=>`<option>${v}</option>`).join("")}</select>
+      <label>Resultado</label>
+      <select id="r"><option>Bueno</option><option>Regular</option><option>Malo</option></select>
+      <label>Observaciones</label>
+      <textarea id="o"></textarea>
+      <button class="btn bp" onclick="save()">Guardar</button>
+    </div>`;
+}
+function save(){
+  DATA.push({f:new Date().toLocaleDateString(),sup:USER.key,v:document.getElementById("v").value,res:document.getElementById("r").value,o:document.getElementById("o").value});
+  localStorage.setItem("registros_claro",JSON.stringify(DATA));
+  home();
+}
+
+/* ===== LIST ===== */
+function list(){
+  const vis = DATA.filter(r=>USER.tipo==="claro"||r.sup===USER.key);
+  content.innerHTML = vis.map(r=>`
+    <div class="card">
+      ${r.v}<br>
+      <span class="badge ${r.res==="Bueno"?"bg":r.res==="Regular"?"ba":"br"}">${r.res}</span>
+    </div>`).join("");
+}
+
+/* ===== EXCEL PRO ===== */
+function excel(){
+  let h="<table border='1'><tr><th>Fecha</th><th>Supervisor</th><th>Vendedor</th><th>Resultado</th><th>Obs</th></tr>";
+  DATA.forEach(r=>{
+    const c=r.res==="Bueno"?"#a8d08d":r.res==="Regular"?"#ffe699":"#f4b084";
+    h+=`<tr><td>${r.f}</td><td>${r.sup}</td><td>${r.v}</td><td style="background:${c}">${r.res}</td><td>${r.o}</td></tr>`;
+  });
+  h+="</table>";
+  const b=new Blob([h],{type:"application/vnd.ms-excel"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(b);
+  a.download="acompanamientos_claro.xls";
+  a.click();
+}
+</script>
+
+</body>
+</html>
