@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Acompañamientos y Relevamientos – Claro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f5f5f5;
+    }
+
+    header {
+      background: #e60000;
+      color: white;
+      padding: 10px 15px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    header img {
+      height: 40px;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+
+    .container {
+      padding: 15px;
+    }
+
+    .card {
+      background: white;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+    }
+
+    select, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+
+    button {
+      background: #e60000;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+
+    .badge {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .verde { background: green; }
+    .amarillo { background: orange; }
+    .rojo { background: red; }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 16px; }
+      table { font-size: 12px; }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <img src="logo-claro.png" alt="Claro">
+  <h1>Acompañamientos y Relevamientos</h1>
+</header>
+
+<div class="container">
+
+  <!-- Selección de usuario -->
+  <div class="card">
+    <h3>Ingresar como</h3>
+
+    <select id="tipoUsuario" onchange="seleccionarTipo()">
+      <option value="">Seleccione tipo…</option>
+      <option value="TERRENO">Supervisor de Terreno</option>
+      <option value="CLARO">Supervisor de Claro</option>
+    </select>
+
+    <select id="nombreUsuario" onchange="cargarVista()" style="display:none"></select>
+  </div>
+
+  <div id="dashboard" class="card" style="display:none"></div>
+  <div id="formulario" class="card" style="display:none"></div>
+  <div id="listado" class="card" style="display:none"></div>
+
+</div>
+
+<script>
+/* ===== DATOS ===== */
+const supervisores = {
+  "Hugo Orelo": [
+    "Cisterna Camila","Rodriguez Maria Del Rosario","Santana Mayra Belen",
+    "Marcelo Mussatti","Albornoz Andres","Castro Mauro",
+    "Calvo Sofia Giselle","Hidalgo Eduardo"
+  ],
+  "Bernarda Ponce": [
+    "Garcia Ignacio Ariel","Alma Gloria Eliana","Picon Pamela Belen",
+    "Garcia Angeles Ivonne","Rivero Beatriz","Araya Fernando",
+    "Veron Romina","Ruiz Luz Martina","Toro Fabian",
+    "Guevara Hugo","Cisterna Noelia"
+  ],
+  "Franco Tolaba": [
+    "Pia Ferrari","José Galván","Joaquín Pringles","Josué Elizondo"
+  ]
+};
+
+let tipo = "";
+let usuario = "";
+
+/* ===== UTILIDADES ===== */
+function registros() {
+  return JSON.parse(localStorage.getItem("registros") || "[]");
+}
+
+function guardarRegistro(r) {
+  const data = registros();
+  data.push(r);
+  localStorage.setItem("registros", JSON.stringify(data));
+}
+
+function claseResultado(res) {
+  return res === "Bueno" ? "verde" : res === "Regular" ? "amarillo" : "rojo";
+}
+
+/* ===== FLUJO ===== */
+function seleccionarTipo() {
+  tipo = document.getElementById("tipoUsuario").value;
+  const sel = document.getElementById("nombreUsuario");
+  sel.innerHTML = "<option value=''>Seleccione nombre…</option>";
+  Object.keys(supervisores).forEach(s => {
+    sel.innerHTML += `<option>${s}</option>`;
+  });
+  sel.style.display = "block";
+}
+
+function cargarVista() {
+  usuario = document.getElementById("nombreUsuario").value;
+  document.getElementById("dashboard").style.display = "block";
+  document.getElementById("formulario").style.display = "block";
+  document.getElementById("listado").style.display = "block";
+  renderDashboard();
+  renderFormulario();
+  renderListado();
+}
+
+/* ===== DASHBOARD ===== */
+function renderDashboard() {
+  const visibles = registros().filter(r =>
+    tipo === "CLARO" || r.supervisor === usuario
+  );
+
+  const b = visibles.filter(r=>r.resultado==="Bueno").length;
+  const r = visibles.filter(r=>r.resultado==="Regular").length;
+  const m = visibles.filter(r=>r.resultado==="Malo").length;
+
+  document.getElementById("dashboard").innerHTML = `
+    <h3>Métricas</h3>
+    Total registros: <strong>${visibles.length}</strong><br><br>
+    🟢 ${b} &nbsp; 🟡 ${r} &nbsp; 🔴 ${m}
+    <br><br>
+    <button onclick="exportarExcel()">Exportar a Excel</button>
+  `;
+}
+
+/* ===== FORMULARIO ===== */
+function renderFormulario() {
+  const div = document.getElementById("formulario");
+
+  div.innerHTML = `
+    <h3>${tipo === "TERRENO" ? "Acompañamiento" : "Relevamiento"}</h3>
+
+    ${tipo === "CLARO" ? `
+      Supervisor de Terreno:
+      <select id="supSel" onchange="cargarVendedoresClaro()">
+        <option value="">Seleccione…</option>
+        ${Object.keys(supervisores).map(s=>`<option>${s}</option>`).join("")}
+      </select>
+    ` : ""}
+
+    Vendedor:
+    <select id="vendSel">
+      ${(tipo === "TERRENO" ? supervisores[usuario] : []).map(v=>`<option>${v}</option>`).join("")}
+    </select>
+
+    Resultado:
+    <select id="resSel">
+      <option>Bueno</option>
+      <option>Regular</option>
+      <option>Malo</option>
+    </select>
+
+    Observaciones:
+    <textarea id="obsSel"></textarea>
+
+    <button onclick="guardar()">Guardar</button>
+  `;
+}
+
+function cargarVendedoresClaro() {
+  const sup = document.getElementById("supSel").value;
+  const sel = document.getElementById("vendSel");
+  sel.innerHTML = supervisores[sup].map(v=>`<option>${v}</option>`).join("");
+}
+
+/* ===== GUARDAR ===== */
+function guardar() {
+  const r = {
+    fecha: new Date().toLocaleDateString(),
+    supervisor: tipo === "TERRENO" ? usuario : document.getElementById("supSel").value,
+    vendedor: document.getElementById("vendSel").value,
+    resultado: document.getElementById("resSel").value,
+    observaciones: document.getElementById("obsSel").value,
+    tipo
+  };
+
+  guardarRegistro(r);
+  renderDashboard();
+  renderListado();
+}
+
+/* ===== LISTADO ===== */
+function renderListado() {
+  const visibles = registros().filter(r =>
+    tipo === "CLARO" || r.supervisor === usuario
+  );
+
+  document.getElementById("listado").innerHTML = `
+    <h3>Registros</h3>
+    <table>
+      <tr>
+        <th>Fecha</th><th>Supervisor</th><th>Vendedor</th><th></th><th>Obs.</th>
+      </tr>
+      ${visibles.map(r=>`
+        <tr>
+          <td>${r.fecha}</td>
+          <td>${r.supervisor}</td>
+          <td>${r.vendedor}</td>
+          <td><span class="badge ${claseResultado(r.resultado)}"></span></td>
+          <td>${r.observaciones}</td>
+        </tr>
+      `).join("")}
+    </table>
+  `;
+}
+
+/* ===== EXPORTAR ===== */
+function exportarExcel() {
+  const visibles = registros().filter(r =>
+    tipo === "CLARO" || r.supervisor === usuario
+  );
+
+  let csv = "Fecha,Supervisor,Vendedor,Resultado,Observaciones\n";
+  visibles.forEach(r=>{
+    csv += `${r.fecha},${r.supervisor},${r.vendedor},${r.resultado},"${r.observaciones}"\n`;
+  });
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "relevamientos.csv";
+  a.click();
+}
+</script>
+
+</body>
+</html>
