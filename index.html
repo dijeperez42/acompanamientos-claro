@@ -17,24 +17,84 @@ body{background:var(--bg);color:var(--text);font-family:system-ui;}
 button,select,textarea{font-family:inherit;}
 .hide{display:none;}
 
-#login,#app{min-height:100vh;}
-#login{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;}
-.logo-wrap img{width:120px;margin-bottom:1rem;}
-.lcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;width:100%;max-width:360px;}
-label{font-size:12px;color:var(--text2);}
-select,textarea{width:100%;margin-top:6px;margin-bottom:14px;padding:10px;border-radius:var(--rs);border:1px solid var(--border);background:#1a1d27;color:var(--text);}
-.btn{padding:10px;border:none;border-radius:var(--rs);cursor:pointer;}
-.bp{background:var(--red);color:#fff;}
+/* ===== LOGIN ===== */
+#login{
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:2rem;
+}
 
-#app{display:none;flex-direction:column;}
-.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:12px;display:flex;justify-content:space-between;align-items:center;}
-.content{flex:1;padding:1rem;}
+/* Logo centrado */
+.logo-wrap{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:1.5rem;
+}
+.logo-wrap img{
+  width:140px;         /* ajustá este valor según el tamaño real del PNG */
+  height:auto;
+  display:block;
+  object-fit:contain;
+}
+/* Fallback si el PNG no carga */
+.logo-fallback{
+  display:none;
+  font-size:2rem;
+  font-weight:800;
+  color:var(--red);
+  letter-spacing:2px;
+}
+
+.lcard{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:1.75rem;
+  width:100%;
+  max-width:360px;
+  box-shadow:0 8px 32px rgba(0,0,0,.4);
+}
+label{font-size:12px;color:var(--text2);display:block;}
+select,textarea{
+  width:100%;
+  margin-top:6px;
+  margin-bottom:14px;
+  padding:10px;
+  border-radius:var(--rs);
+  border:1px solid var(--border);
+  background:#1a1d27;
+  color:var(--text);
+}
+textarea{resize:vertical;min-height:80px;}
+.btn{width:100%;padding:11px;border:none;border-radius:var(--rs);cursor:pointer;font-size:14px;font-weight:600;}
+.bp{background:var(--red);color:#fff;transition:opacity .2s;}
+.bp:hover{opacity:.85;}
+
+/* ===== APP ===== */
+#app{display:none;flex-direction:column;min-height:100vh;}
+.topbar{
+  background:var(--card);
+  border-bottom:1px solid var(--border);
+  padding:12px 16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.topbar button{width:auto;padding:6px 14px;background:rgba(255,255,255,.08);color:var(--text);border:1px solid var(--border);border-radius:var(--rs);}
+.content{flex:1;padding:1rem;overflow-y:auto;}
 .bnav{display:flex;background:var(--card);border-top:1px solid var(--border);}
-.ni{flex:1;padding:10px;background:none;border:none;color:var(--text2);cursor:pointer;}
-.ni.active{color:var(--red);font-weight:600;}
+.ni{flex:1;padding:12px 6px;background:none;border:none;color:var(--text2);cursor:pointer;font-size:13px;}
+.ni.active{color:var(--red);font-weight:700;border-top:2px solid var(--red);}
 
+/* ===== CARDS ===== */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1rem;margin-bottom:.75rem;}
-.badge{padding:4px 10px;border-radius:20px;font-size:11px;}
+.stat{font-size:2rem;font-weight:700;margin:.25rem 0;}
+.badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;}
 .bg{background:rgba(34,197,94,.15);color:var(--green);}
 .ba{background:rgba(245,158,11,.15);color:var(--amber);}
 .br{background:rgba(239,68,68,.15);color:var(--red);}
@@ -45,19 +105,30 @@ select,textarea{width:100%;margin-top:6px;margin-bottom:14px;padding:10px;border
 
 <!-- LOGIN -->
 <div id="login">
+
   <div class="logo-wrap">
-    <img src="logo-claro.png" alt="Claro">
+    <!--
+      OPCIÓN 1 (recomendada para GitHub Pages):
+      Si el HTML y el PNG están en la misma carpeta del repo, esta ruta funciona.
+      Si el PNG está en una subcarpeta, ajustá: src="assets/logo-claro.png"
+    -->
+    <img
+      src="logo-claro.png"
+      alt="Claro"
+      onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+    >
+    <!-- Se muestra solo si el PNG no carga -->
+    <span class="logo-fallback">CLARO</span>
   </div>
 
   <div class="lcard">
     <label>Usuario</label>
-    <select id="userSel">
-      <option value="">— seleccionar —</option>
-      <option value="claro">Supervisor Claro — Diego Perez</option>
-      <option value="hugo">Supervisor Terreno — Hugo Orelo</option>
-      <option value="bernarda">Supervisor Terreno — Bernarda Ponce</option>
-      <option value="franco">Supervisor Terreno — Franco Tolaba</option>
-    </select>
+    <input type="text" id="userInput" placeholder="tu usuario" autocomplete="username"
+      style="width:100%;margin-top:6px;margin-bottom:14px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:#1a1d27;color:#f0f2ff;font-size:14px;">
+    <label>Contraseña</label>
+    <input type="password" id="passInput" placeholder="••••••" autocomplete="current-password"
+      style="width:100%;margin-top:6px;margin-bottom:18px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:#1a1d27;color:#f0f2ff;font-size:14px;"
+      onkeydown="if(event.key==='Enter') login()">
     <button class="btn bp" onclick="login()">Ingresar</button>
   </div>
 </div>
@@ -71,11 +142,12 @@ select,textarea{width:100%;margin-top:6px;margin-bottom:14px;padding:10px;border
 
   <div class="content" id="content"></div>
 
-  <div class="bnav">
-    <button class="ni active" onclick="go('home')">Inicio</button>
-    <button class="ni" onclick="go('new')">Nuevo</button>
-    <button class="ni" onclick="go('list')">Registros</button>
-    <button class="ni" onclick="exportExcel()">Excel</button>
+  <div class="bnav" id="bnav">
+    <button class="ni active" onclick="go('home', event)">Inicio</button>
+    <button class="ni" onclick="go('new', event)">Nuevo</button>
+    <button class="ni" onclick="go('list', event)">Registros</button>
+    <button class="ni" id="btnExcel" onclick="exportExcel()">Excel</button>
+    <button class="ni" id="btnStats" style="display:none" onclick="go('stats', event)">Estadísticas</button>
   </div>
 </div>
 
@@ -87,106 +159,272 @@ const VENDEDORES = {
   franco:["Pia Ferrari","José Galván","Joaquín Pringles","Josué Elizondo"]
 };
 
-let USER=null;
-let DATA=JSON.parse(localStorage.getItem("registros_claro")||"[]");
+let USER = null;
+let DATA = JSON.parse(localStorage.getItem("registros_claro") || "[]");
 
 /* ===== LOGIN ===== */
+const CREDENCIALES = {
+  "diego":    { pass:"claro2024",    key:"claro"    },
+  "hugo":     { pass:"hugo2024",     key:"hugo"     },
+  "bernarda": { pass:"bernarda2024", key:"bernarda" },
+  "franco":   { pass:"franco2024",   key:"franco"   }
+};
+
 function login(){
-  const u=document.getElementById("userSel").value;
-  if(!u) return alert("Seleccioná un usuario");
-  USER=u;
-  document.getElementById("login").style.display="none";
-  document.getElementById("app").style.display="flex";
+  const u = document.getElementById("userInput").value.trim().toLowerCase();
+  const p = document.getElementById("passInput").value;
+  const cred = CREDENCIALES[u];
+  if(!cred || cred.pass !== p) return alert("Usuario o contraseña incorrectos");
+  USER = cred.key;
+  document.getElementById("login").style.display = "none";
+  document.getElementById("app").style.display = "flex";
   document.getElementById("userTitle").textContent =
-    u==="claro" ? "Supervisor Claro — Diego Perez" : "Supervisor Terreno — "+u.toUpperCase();
-  go("home");
+    u === "claro" ? "Supervisor Claro — Diego Perez" : "Supervisor Terreno — " + u.toUpperCase();
+  document.getElementById("btnStats").style.display = u === "claro" ? "" : "none";
+  document.getElementById("btnExcel").style.display = u === "claro" ? "" : "none";
+  renderHome();
 }
 
 function logout(){
-  USER=null;
-  document.getElementById("app").style.display="none";
-  document.getElementById("login").style.display="flex";
+  USER = null;
+  document.getElementById("userInput").value = "";
+  document.getElementById("passInput").value = "";
+  document.getElementById("app").style.display = "none";
+  document.getElementById("login").style.display = "flex";
 }
 
 /* ===== NAV ===== */
-function go(view){
-  document.querySelectorAll(".ni").forEach(b=>b.classList.remove("active"));
-  event.target.classList.add("active");
-
-  if(view==="home") renderHome();
-  if(view==="new") renderNew();
-  if(view==="list") renderList();
+function go(view, evt){
+  document.querySelectorAll(".ni").forEach(b => b.classList.remove("active"));
+  if(evt && evt.target) evt.target.classList.add("active");
+  if(view === "home") renderHome();
+  if(view === "new")  renderNew();
+  if(view === "list") renderList();
+  if(view === "stats" && USER === "claro") renderStats();
 }
 
 /* ===== VISTAS ===== */
 function renderHome(){
-  const v=DATA.filter(r=>USER==="claro"||r.sup===USER);
-  content.innerHTML=`
+  const v = DATA.filter(r => USER === "claro" || r.sup === USER);
+  document.getElementById("content").innerHTML = `
     <div class="card">
-      Total registros: ${v.length}<br>
-      🟢 ${v.filter(r=>r.res==="Bueno").length}
-      🟡 ${v.filter(r=>r.res==="Regular").length}
-      🔴 ${v.filter(r=>r.res==="Malo").length}
+      <div style="color:var(--text2);font-size:13px;margin-bottom:.5rem;">Total registros</div>
+      <div class="stat">${v.length}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;">
+      <div class="card" style="text-align:center;">
+        <div class="badge bg">Bueno</div>
+        <div class="stat" style="color:var(--green)">${v.filter(r=>r.res==="Bueno").length}</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div class="badge ba">Regular</div>
+        <div class="stat" style="color:var(--amber)">${v.filter(r=>r.res==="Regular").length}</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div class="badge br">Malo</div>
+        <div class="stat" style="color:var(--red)">${v.filter(r=>r.res==="Malo").length}</div>
+      </div>
     </div>`;
 }
 
 function renderNew(){
-  const vends = USER==="claro"
+  const vends = USER === "claro"
     ? Object.values(VENDEDORES).flat()
     : VENDEDORES[USER];
 
-  content.innerHTML=`
+  document.getElementById("content").innerHTML = `
     <div class="card">
       <label>Vendedor</label>
-      <select id="v">${vends.map(x=>`<option>${x}</option>`).join("")}</select>
+      <select id="v">${vends.map(x => `<option>${x}</option>`).join("")}</select>
 
       <label>Resultado</label>
       <select id="r"><option>Bueno</option><option>Regular</option><option>Malo</option></select>
 
       <label>Observaciones</label>
-      <textarea id="o"></textarea>
+      <textarea id="o" placeholder="Escribí tus observaciones..."></textarea>
 
       <button class="btn bp" onclick="save()">Guardar</button>
     </div>`;
 }
 
 function renderList(){
-  const v=DATA.filter(r=>USER==="claro"||r.sup===USER);
-  content.innerHTML=v.map(r=>`
-    <div class="card">
-      <strong>${r.v}</strong><br>
-      <span class="badge ${r.res==="Bueno"?"bg":r.res==="Regular"?"ba":"br"}">${r.res}</span>
-    </div>`).join("");
+  const v = DATA.filter(r => USER === "claro" || r.sup === USER);
+  const html = v.length === 0
+    ? `<div class="card" style="color:var(--text2);text-align:center;">Sin registros aún</div>`
+    : v.slice().reverse().map(r => `
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem;">
+            <strong>${r.v}</strong>
+            <span class="badge ${r.res==="Bueno"?"bg":r.res==="Regular"?"ba":"br"}">${r.res}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text2);">${r.f} · ${r.sup}</div>
+          ${r.o ? `<div style="margin-top:.5rem;font-size:13px;">${r.o}</div>` : ""}
+        </div>`).join("");
+  document.getElementById("content").innerHTML = html;
 }
 
 /* ===== GUARDAR ===== */
 function save(){
+  const v = document.getElementById("v");
+  const r = document.getElementById("r");
+  const o = document.getElementById("o");
+  if(!v || !r) return;
   DATA.push({
-    f:new Date().toLocaleDateString(),
-    sup:USER==="claro"?"claro":USER,
-    v:document.getElementById("v").value,
-    res:document.getElementById("r").value,
-    o:document.getElementById("o").value
+    f: new Date().toLocaleDateString("es-AR"),
+    sup: USER,
+    v: v.value,
+    res: r.value,
+    o: o.value
   });
-  localStorage.setItem("registros_claro",JSON.stringify(DATA));
-  go("home");
+  localStorage.setItem("registros_claro", JSON.stringify(DATA));
+  renderHome();
+  // volver a home visualmente
+  document.querySelectorAll(".ni").forEach((b,i) => b.classList.toggle("active", i===0));
+}
+
+/* ===== ESTADÍSTICAS (solo Supervisor Claro) ===== */
+function renderStats(){
+  if(USER !== "claro") return;
+
+  const SUPS = [
+    { key:"hugo",     label:"Hugo Orelo" },
+    { key:"bernarda", label:"Bernarda Ponce" },
+    { key:"franco",   label:"Franco Tolaba" }
+  ];
+
+  // Totales globales
+  const total = DATA.length;
+  const gB = DATA.filter(r=>r.res==="Bueno").length;
+  const gR = DATA.filter(r=>r.res==="Regular").length;
+  const gM = DATA.filter(r=>r.res==="Malo").length;
+
+  // Construir cards por supervisor
+  const supCards = SUPS.map(s => {
+    const rows = DATA.filter(r => r.sup === s.key);
+    const n  = rows.length;
+    const b  = rows.filter(r=>r.res==="Bueno").length;
+    const re = rows.filter(r=>r.res==="Regular").length;
+    const m  = rows.filter(r=>r.res==="Malo").length;
+    const pB = n ? Math.round(b/n*100) : 0;
+    const pR = n ? Math.round(re/n*100) : 0;
+    const pM = n ? Math.round(m/n*100) : 0;
+
+    // Score: peso ponderado (bueno=1, regular=0.5, malo=0)
+    const score = n ? Math.round((b + re*0.5) / n * 100) : 0;
+    const scoreColor = score >= 70 ? "var(--green)" : score >= 40 ? "var(--amber)" : "var(--red)";
+
+    return `
+      <div class="card" style="margin-bottom:.75rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+          <div>
+            <div style="font-weight:700;font-size:15px;">${s.label}</div>
+            <div style="font-size:12px;color:var(--text2);">${n} acompañamiento${n!==1?"s":""}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:11px;color:var(--text2);">Score</div>
+            <div style="font-size:1.6rem;font-weight:800;color:${scoreColor};line-height:1;">${score}%</div>
+          </div>
+        </div>
+
+        <!-- Barra apilada -->
+        <div style="height:14px;border-radius:7px;overflow:hidden;display:flex;margin-bottom:.6rem;background:rgba(255,255,255,.05);">
+          ${pB ? `<div style="width:${pB}%;background:var(--green);transition:width .6s;"></div>` : ""}
+          ${pR ? `<div style="width:${pR}%;background:var(--amber);transition:width .6s;"></div>` : ""}
+          ${pM ? `<div style="width:${pM}%;background:var(--red);transition:width .6s;"></div>`   : ""}
+        </div>
+
+        <!-- Leyenda -->
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+          <span class="badge bg">✔ ${b} Bueno${b!==1?"s":""} (${pB}%)</span>
+          <span class="badge ba">~ ${re} Regular${re!==1?"es":""} (${pR}%)</span>
+          <span class="badge br">✖ ${m} Malo${m!==1?"s":""} (${pM}%)</span>
+        </div>
+      </div>`;
+  }).join("");
+
+  // Gráfico de barras SVG — comparativa entre supervisores
+  const maxN = Math.max(...SUPS.map(s => DATA.filter(r=>r.sup===s.key).length), 1);
+  const barW = 54, gap = 24, svgW = SUPS.length*(barW+gap)+gap, svgH = 130;
+
+  const svgBars = SUPS.map((s, i) => {
+    const rows = DATA.filter(r=>r.sup===s.key);
+    const n  = rows.length;
+    const b  = rows.filter(r=>r.res==="Bueno").length;
+    const re = rows.filter(r=>r.res==="Regular").length;
+    const m  = rows.filter(r=>r.res==="Malo").length;
+    const x  = gap + i*(barW+gap);
+    const maxH = svgH - 30;
+
+    // segmentos apilados de arriba a abajo: Malo, Regular, Bueno
+    const hB = n ? Math.round(b/maxN*maxH)  : 0;
+    const hR = n ? Math.round(re/maxN*maxH) : 0;
+    const hM = n ? Math.round(m/maxN*maxH)  : 0;
+    const totalH = hB+hR+hM;
+    const yBase = svgH - 18;
+
+    const firstName = s.label.split(" ")[0];
+    return `
+      <g>
+        ${hM ? `<rect x="${x}" y="${yBase-totalH}" width="${barW}" height="${hM}" fill="#e60000" rx="3"/>` : ""}
+        ${hR ? `<rect x="${x}" y="${yBase-totalH+hM}" width="${barW}" height="${hR}" fill="#f59e0b"/>` : ""}
+        ${hB ? `<rect x="${x}" y="${yBase-hB}" width="${barW}" height="${hB}" fill="#22c55e" rx="0"/>` : ""}
+        ${totalH === 0 ? `<rect x="${x}" y="${yBase-4}" width="${barW}" height="4" fill="rgba(255,255,255,.1)" rx="2"/>` : ""}
+        <text x="${x+barW/2}" y="${svgH-2}" text-anchor="middle" fill="#8b90a8" font-size="11" font-family="system-ui">${firstName}</text>
+        ${n>0 ? `<text x="${x+barW/2}" y="${yBase-totalH-5}" text-anchor="middle" fill="#f0f2ff" font-size="11" font-weight="700" font-family="system-ui">${n}</text>` : ""}
+      </g>`;
+  }).join("");
+
+  const svg = `
+    <svg viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
+      ${svgBars}
+    </svg>`;
+
+  document.getElementById("content").innerHTML = `
+    <!-- Resumen global -->
+    <div class="card" style="margin-bottom:.75rem;">
+      <div style="color:var(--text2);font-size:12px;margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.5px;">Resumen global</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:.4rem;text-align:center;">
+        <div><div style="font-size:1.4rem;font-weight:800;">${total}</div><div style="font-size:10px;color:var(--text2);">Total</div></div>
+        <div><div style="font-size:1.4rem;font-weight:800;color:var(--green);">${gB}</div><div style="font-size:10px;color:var(--text2);">Buenos</div></div>
+        <div><div style="font-size:1.4rem;font-weight:800;color:var(--amber);">${gR}</div><div style="font-size:10px;color:var(--text2);">Regulares</div></div>
+        <div><div style="font-size:1.4rem;font-weight:800;color:var(--red);">${gM}</div><div style="font-size:10px;color:var(--text2);">Malos</div></div>
+      </div>
+    </div>
+
+    <!-- Gráfico comparativo -->
+    <div class="card" style="margin-bottom:.75rem;">
+      <div style="color:var(--text2);font-size:12px;margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.5px;">Acompañamientos por supervisor</div>
+      ${svg}
+      <div style="display:flex;gap:1rem;justify-content:center;margin-top:.6rem;flex-wrap:wrap;">
+        <span style="font-size:11px;color:var(--green);">■ Bueno</span>
+        <span style="font-size:11px;color:var(--amber);">■ Regular</span>
+        <span style="font-size:11px;color:var(--red);">■ Malo</span>
+      </div>
+    </div>
+
+    <!-- Cards por supervisor -->
+    <div style="color:var(--text2);font-size:12px;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.5px;padding:0 .1rem;">Detalle por supervisor</div>
+    ${supCards}
+    ${DATA.length === 0 ? '<div class="card" style="color:var(--text2);text-align:center;">Sin datos aún. Cargá acompañamientos primero.</div>' : ""}
+  `;
 }
 
 /* ===== EXCEL ===== */
 function exportExcel(){
-  let h="<table border='1'><tr><th>Fecha</th><th>Supervisor</th><th>Vendedor</th><th>Resultado</th><th>Obs</th></tr>";
-  DATA.forEach(r=>{
-    const c=r.res==="Bueno"?"#a8d08d":r.res==="Regular"?"#ffe699":"#f4b084";
-    h+=`<tr><td>${r.f}</td><td>${r.sup}</td><td>${r.v}</td><td style="background:${c}">${r.res}</td><td>${r.o}</td></tr>`;
+  let h = "<table border='1'><tr><th>Fecha</th><th>Supervisor</th><th>Vendedor</th><th>Resultado</th><th>Observaciones</th></tr>";
+  DATA.forEach(r => {
+    const c = r.res==="Bueno" ? "#a8d08d" : r.res==="Regular" ? "#ffe699" : "#f4b084";
+    h += `<tr><td>${r.f}</td><td>${r.sup}</td><td>${r.v}</td><td style="background:${c}">${r.res}</td><td>${r.o}</td></tr>`;
   });
-  h+="</table>";
-  const b=new Blob([h],{type:"application/vnd.ms-excel"});
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(b);
-  a.download="acompanamientos_claro.xls";
+  h += "</table>";
+  const b = new Blob([h], {type:"application/vnd.ms-excel"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(b);
+  a.download = "acompanamientos_claro.xls";
   a.click();
 }
 </script>
 
 </body>
 </html>
+
