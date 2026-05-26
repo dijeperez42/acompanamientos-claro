@@ -403,19 +403,34 @@ function renderHome(){
   var myCoachs = isClaro ? COACHS : COACHS.filter(function(r){ return r.sup===USER; });
 
   var total = myAcomps.length;
-  var buenos   = myAcomps.filter(function(r){ return r.calVenta==="Buena"; }).length;
-  var regulares= myAcomps.filter(function(r){ return r.calVenta==="Regular"; }).length;
-  var malos    = myAcomps.filter(function(r){ return r.calVenta==="Mala"; }).length;
+  // helpers para normalizar valores guardados de distintos formularios
+  function isBueno(r){
+    var v = (r.calVenta||"").toLowerCase();
+    return v==="buena"||v==="bueno";
+  }
+  function isRegular(r){
+    var v = (r.calVenta||"").toLowerCase();
+    return v==="regular";
+  }
+  function isMalo(r){
+    var v = (r.calVenta||"").toLowerCase();
+    return v==="mala"||v==="malo";
+  }
+  function getSpeechEval(r){
+    return (r.speech&&r.speech.eval)||r.calVenta||"";
+  }
+
+  var buenos   = myAcomps.filter(isBueno).length;
+  var regulares= myAcomps.filter(isRegular).length;
+  var malos    = myAcomps.filter(isMalo).length;
   var pctBuena = pct(buenos, total);
 
-  // Speech %
-  var speechOk = 0, speechTotal = 0;
-  myAcomps.forEach(function(r){
-    if(r.speech && r.speech.checks){
-      r.speech.checks.forEach(function(c){ speechTotal++; if(c==="si") speechOk++; });
-    }
-  });
-  var pctSpeech = pct(speechOk, speechTotal);
+  // Speech % — usar eval directamente ya que checks puede estar vacío
+  var speechOk = myAcomps.filter(function(r){
+    var v = getSpeechEval(r).toLowerCase();
+    return v==="bueno"||v==="buena";
+  }).length;
+  var pctSpeech = pct(speechOk, total);
 
   // Coachings efectivos
   var coachEf = myCoachs.filter(function(r){ return r.resultado==="Positivo"; }).length;
@@ -461,7 +476,10 @@ function renderHome(){
     ["hugo","bernarda","franco"].forEach(function(s){
       var sa = ACOMPS.filter(function(r){ return r.sup===s; });
       var sc = COACHS.filter(function(r){ return r.sup===s; });
-      var sb = sa.filter(function(r){ return r.calVenta==="Buena"; }).length;
+      var sb = sa.filter(function(r){
+        var v=(r.calVenta||"").toLowerCase();
+        return v==="buena"||v==="bueno";
+      }).length;
       var spct = pct(sb, sa.length);
       var sem = spct>=70?"s-verde":spct>=40?"s-amarillo":"s-rojo";
       html += '<div class="vend-row">' +
@@ -985,46 +1003,144 @@ function toggleDetail(id){
 function exportExcel(){
   if(USER!=="claro") return;
 
-  // Hoja acompañamientos
-  var h = "<table border='1'><tr style='background:#e60000;color:#fff;'>" +
-    "<th>Fecha</th><th>Supervisor</th><th>Vendedor</th>" +
-    "<th>Speech-Uso</th><th>Speech-Orden</th><th>Speech-Presentación</th><th>Speech-Objeciones</th>" +
-    "<th>Speech Eval</th><th>Desvíos</th>" +
-    "<th>CV-Claridad</th><th>CV-Adecuación</th><th>CV-Cierre</th><th>CV-Expectativas</th>" +
-    "<th>Cal.Venta</th><th>Liderazgo Eval</th><th>Observaciones</th>" +
-  "</tr>";
+  var SUPS_LIST = [
+    {key:"hugo",     label:"Hugo Orelo"},
+    {key:"bernarda", label:"Bernarda Ponce"},
+    {key:"franco",   label:"Franco Tolaba"}
+  ];
 
-  ACOMPS.forEach(function(r){
-    var c = r.calVenta==="Buena"?"#a8d08d":r.calVenta==="Regular"?"#ffe699":"#f4b084";
-    var sp = r.speech&&r.speech.checks ? r.speech.checks : ["","","",""];
-    var cv = r.cvChecks || ["","","",""];
-    h += "<tr>" +
-      "<td>"+r.fecha+"</td><td>"+(SUPERVISORES[r.sup]||r.sup)+"</td><td>"+r.vendedor+"</td>" +
-      "<td>"+ynLabel(sp[0])+"</td><td>"+ynLabel(sp[1])+"</td><td>"+ynLabel(sp[2])+"</td><td>"+ynLabel(sp[3])+"</td>" +
-      "<td>"+(r.speech&&r.speech.eval||"-")+"</td><td>"+(r.speech&&r.speech.desv||"")+"</td>" +
-      "<td>"+ynLabel(cv[0])+"</td><td>"+ynLabel(cv[1])+"</td><td>"+ynLabel(cv[2])+"</td><td>"+ynLabel(cv[3])+"</td>" +
-      "<td style='background:"+c+";'>"+r.calVenta+"</td>" +
-      "<td>"+(r.liderazgo&&r.liderazgo.eval||"-")+"</td><td>"+r.obs+"</td>" +
-    "</tr>";
+  function colorCal(v){
+    var lv=(v||"").toLowerCase();
+    if(lv==="bueno"||lv==="buena") return "#a8d08d";
+    if(lv==="regular") return "#ffe699";
+    return "#f4b084";
+  }
+  function colorRes(v){
+    if(v==="Positivo") return "#a8d08d";
+    if(v==="Parcial")  return "#ffe699";
+    return "#f4b084";
+  }
+  function colorLid(v){
+    if(v==="Alto")  return "#a8d08d";
+    if(v==="Medio") return "#ffe699";
+    if(v==="Bajo")  return "#f4b084";
+    return "";
+  }
+
+  var hStyle = "background:#c00000;color:#ffffff;font-weight:bold;text-align:center;border:1px solid #999;padding:6px 8px;";
+  var cell   = "border:1px solid #ddd;padding:5px 7px;";
+  var cellC  = "border:1px solid #ddd;padding:5px 7px;text-align:center;";
+
+  var h = "<html><body style='font-family:Arial,sans-serif;font-size:10pt;'>";
+
+  // ── ACOMPAÑAMIENTOS ──
+  h += "<h2 style='color:#c00000;'>Acompañamientos</h2>";
+  h += "<table cellspacing='0' cellpadding='0' style='border-collapse:collapse;'><tr>";
+  ["Fecha","Supervisor","Vendedor","Speech","Rebate Obj.","Liderazgo","Desvios","Observaciones"].forEach(function(t){
+    h += "<th style='"+hStyle+"'>"+t+"</th>";
+  });
+  h += "</tr>";
+
+  var rowBg = false;
+  SUPS_LIST.forEach(function(s){
+    h += "<tr><td colspan='8' style='background:#e60000;color:#fff;font-weight:bold;padding:4px 8px;'>"+s.label+"</td></tr>";
+    var rows = ACOMPS.filter(function(r){ return r.sup===s.key; });
+    if(!rows.length) h += "<tr><td colspan='8' style='"+cell+"color:#999;font-style:italic;'>Sin registros</td></tr>";
+    rows.forEach(function(r){
+      var bg = rowBg ? "#fafafa" : "#ffffff"; rowBg=!rowBg;
+      var sp  = (r.speech&&r.speech.eval)||r.calVenta||"-";
+      var obj = r.objEval||"-";
+      var lid = (r.liderazgo&&r.liderazgo.eval)||"-";
+      h += "<tr style='background:"+bg+";'>";
+      h += "<td style='"+cell+"'>"+r.fecha+"</td>";
+      h += "<td style='"+cell+"'>"+s.label+"</td>";
+      h += "<td style='"+cell+"font-weight:bold;'>"+r.vendedor+"</td>";
+      h += "<td style='"+cellC+"background:"+colorCal(sp)+";'>"+sp+"</td>";
+      h += "<td style='"+cellC+"background:"+colorCal(obj)+";'>"+obj+"</td>";
+      h += "<td style='"+cellC+"background:"+colorLid(lid)+";'>"+lid+"</td>";
+      h += "<td style='"+cell+"'>"+(r.speech&&r.speech.desv||"")+"</td>";
+      h += "<td style='"+cell+"'>"+(r.obs||"")+"</td>";
+      h += "</tr>";
+    });
   });
   h += "</table><br><br>";
 
-  // Hoja coachings
-  h += "<table border='1'><tr style='background:#e60000;color:#fff;'>" +
-    "<th>Fecha</th><th>Supervisor</th><th>Vendedor</th><th>Tipos</th><th>Resultado</th>" +
-    "<th>Aspectos</th><th>Compromiso</th><th>A revisar</th><th>Fecha revisión</th>" +
-  "</tr>";
-  COACHS.forEach(function(r){
-    var c = r.resultado==="Positivo"?"#a8d08d":r.resultado==="Parcial"?"#ffe699":"#f4b084";
-    h += "<tr>" +
-      "<td>"+r.fecha+"</td><td>"+(SUPERVISORES[r.sup]||r.sup)+"</td><td>"+r.vendedor+"</td>" +
-      "<td>"+r.tipos+"</td><td style='background:"+c+";'>"+r.resultado+"</td>" +
-      "<td>"+r.aspectos+"</td><td>"+r.compromiso+"</td><td>"+r.revision+"</td><td>"+r.fechaRev+"</td>" +
-    "</tr>";
+  // ── COACHINGS ──
+  h += "<h2 style='color:#c00000;'>Coachings</h2>";
+  h += "<table cellspacing='0' cellpadding='0' style='border-collapse:collapse;'><tr>";
+  ["Fecha","Supervisor","Vendedor","Tipos","Resultado","Aspectos trabajados","Compromiso","A revisar","Fecha revision"].forEach(function(t){
+    h += "<th style='"+hStyle+"'>"+t+"</th>";
   });
-  h += "</table>";
+  h += "</tr>";
 
-  var blob = new Blob([h], {type:"application/vnd.ms-excel"});
+  rowBg = false;
+  SUPS_LIST.forEach(function(s){
+    h += "<tr><td colspan='9' style='background:#e60000;color:#fff;font-weight:bold;padding:4px 8px;'>"+s.label+"</td></tr>";
+    var rows = COACHS.filter(function(r){ return r.sup===s.key; });
+    if(!rows.length) h += "<tr><td colspan='9' style='"+cell+"color:#999;font-style:italic;'>Sin registros</td></tr>";
+    rows.forEach(function(r){
+      var bg = rowBg ? "#fafafa" : "#ffffff"; rowBg=!rowBg;
+      h += "<tr style='background:"+bg+";'>";
+      h += "<td style='"+cell+"'>"+r.fecha+"</td>";
+      h += "<td style='"+cell+"'>"+s.label+"</td>";
+      h += "<td style='"+cell+"font-weight:bold;'>"+r.vendedor+"</td>";
+      h += "<td style='"+cell+"'>"+(r.tipos||"")+"</td>";
+      h += "<td style='"+cellC+"background:"+colorRes(r.resultado)+";font-weight:bold;'>"+r.resultado+"</td>";
+      h += "<td style='"+cell+"'>"+(r.aspectos||"")+"</td>";
+      h += "<td style='"+cell+"'>"+(r.compromiso||"")+"</td>";
+      h += "<td style='"+cell+"'>"+(r.revision||"")+"</td>";
+      h += "<td style='"+cellC+"'>"+(r.fechaRev||"")+"</td>";
+      h += "</tr>";
+    });
+  });
+  h += "</table><br><br>";
+
+  // ── RESUMEN POR VENDEDOR ──
+  h += "<h2 style='color:#c00000;'>Resumen por Vendedor</h2>";
+  h += "<table cellspacing='0' cellpadding='0' style='border-collapse:collapse;'><tr>";
+  ["Supervisor","Vendedor","Nro Acomp.","Ult. Fecha Acomp.","Speech (ultimo)","Obj. (ultimo)","Liderazgo (ultimo)","Nro Coachings","Ult. Resultado Coach"].forEach(function(t){
+    h += "<th style='"+hStyle+"'>"+t+"</th>";
+  });
+  h += "</tr>";
+
+  rowBg = false;
+  SUPS_LIST.forEach(function(s){
+    h += "<tr><td colspan='9' style='background:#e60000;color:#fff;font-weight:bold;padding:4px 8px;'>"+s.label+"</td></tr>";
+    var vendMap = {};
+    ACOMPS.filter(function(r){ return r.sup===s.key; }).forEach(function(r){
+      if(!vendMap[r.vendedor]) vendMap[r.vendedor]={acomps:[],coachs:[]};
+      vendMap[r.vendedor].acomps.push(r);
+    });
+    COACHS.filter(function(r){ return r.sup===s.key; }).forEach(function(r){
+      if(!vendMap[r.vendedor]) vendMap[r.vendedor]={acomps:[],coachs:[]};
+      vendMap[r.vendedor].coachs.push(r);
+    });
+    var keys = Object.keys(vendMap).sort();
+    if(!keys.length) h += "<tr><td colspan='9' style='"+cell+"color:#999;font-style:italic;'>Sin registros</td></tr>";
+    keys.forEach(function(vname){
+      var d = vendMap[vname];
+      var bg = rowBg ? "#fafafa" : "#ffffff"; rowBg=!rowBg;
+      var lastA = d.acomps.length ? d.acomps[d.acomps.length-1] : null;
+      var lastC = d.coachs.length ? d.coachs[d.coachs.length-1] : null;
+      var sp  = lastA ? ((lastA.speech&&lastA.speech.eval)||lastA.calVenta||"-") : "-";
+      var obj = lastA ? (lastA.objEval||"-") : "-";
+      var lid = lastA ? ((lastA.liderazgo&&lastA.liderazgo.eval)||"-") : "-";
+      h += "<tr style='background:"+bg+";'>";
+      h += "<td style='"+cell+"'>"+s.label+"</td>";
+      h += "<td style='"+cell+"font-weight:bold;'>"+vname+"</td>";
+      h += "<td style='"+cellC+"'>"+d.acomps.length+"</td>";
+      h += "<td style='"+cellC+"'>"+(lastA?lastA.fecha:"-")+"</td>";
+      h += "<td style='"+cellC+"background:"+colorCal(sp)+";'>"+sp+"</td>";
+      h += "<td style='"+cellC+"background:"+colorCal(obj)+";'>"+obj+"</td>";
+      h += "<td style='"+cellC+"background:"+colorLid(lid)+";'>"+lid+"</td>";
+      h += "<td style='"+cellC+"'>"+d.coachs.length+"</td>";
+      h += "<td style='"+cellC+"background:"+(lastC?colorRes(lastC.resultado):"")+";'>"+(lastC?lastC.resultado:"-")+"</td>";
+      h += "</tr>";
+    });
+  });
+  h += "</table></body></html>";
+
+  var blob = new Blob([h], {type:"application/vnd.ms-excel;charset=utf-8"});
   var a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = "supervision_claro.xls";
@@ -1036,4 +1152,3 @@ function ynLabel(v){ return v==="si"?"✓ Sí":v==="no"?"✗ No":"-"; }
 </script>
 </body>
 </html>
-
