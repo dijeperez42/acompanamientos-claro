@@ -215,7 +215,45 @@ a{color:var(--red);}
 .tipo-chip{padding:6px 14px;border-radius:16px;border:1.5px solid var(--border);background:var(--white);cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);}
 .tipo-chip.selected{background:var(--red-light);border-color:var(--red);color:var(--red);}
 
-/* responsive desktop */
+/* ===== MODAL ALERTAS ===== */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);
+  z-index:999;display:flex;align-items:center;justify-content:center;padding:1rem;
+}
+.modal-box{
+  background:#fff;border-radius:var(--r);width:100%;max-width:420px;
+  max-height:80vh;overflow-y:auto;
+  box-shadow:0 20px 60px rgba(0,0,0,.3);
+}
+.modal-header{
+  background:var(--red);color:#fff;padding:1rem 1.25rem;
+  border-radius:var(--r) var(--r) 0 0;
+  display:flex;justify-content:space-between;align-items:center;
+  position:sticky;top:0;
+}
+.modal-header h3{font-size:15px;font-weight:800;margin:0;}
+.modal-close{
+  background:rgba(255,255,255,.25);border:none;color:#fff;
+  width:28px;height:28px;border-radius:50%;cursor:pointer;
+  font-size:16px;display:flex;align-items:center;justify-content:center;
+}
+.modal-body{padding:1rem 1.25rem;}
+.alerta-item{
+  border-left:4px solid var(--red);background:var(--red-light);
+  border-radius:0 var(--rs) var(--rs) 0;padding:.75rem;margin-bottom:.6rem;
+}
+.alerta-item.hoy{border-color:var(--bad);background:#fef2f2;}
+.alerta-item.pasado{border-color:#9ca3af;background:#f9fafb;}
+.alerta-vendedor{font-weight:700;font-size:14px;color:var(--text);}
+.alerta-tipo{font-size:12px;color:var(--text2);margin:.2rem 0;}
+.alerta-fecha{
+  display:inline-block;font-size:12px;font-weight:700;
+  padding:2px 8px;border-radius:10px;margin-top:.3rem;
+}
+.alerta-fecha.proxima{background:var(--red-light);color:var(--red);}
+.alerta-fecha.hoy{background:#fef2f2;color:var(--bad);}
+.alerta-fecha.pasado{background:#f3f4f6;color:#6b7280;}
+.alerta-sup{font-size:11px;color:var(--text2);margin-top:.2rem;}
 @media(min-width:640px){
   .stat-grid{grid-template-columns:repeat(4,1fr);}
   .page{padding:1.25rem 1.5rem 90px;}
@@ -281,6 +319,17 @@ a{color:var(--red);}
       <span class="ico">📊</span><span class="ico-label">Excel</span>
     </button>
   </nav>
+  <!-- Modal alertas -->
+  <div id="modal-alertas" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>🔔 Revisiones de Coaching</h3>
+        <button class="modal-close" onclick="cerrarAlertas()">✕</button>
+      </div>
+      <div class="modal-body" id="modal-alertas-body"></div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -348,8 +397,81 @@ function doLogin(){
   document.getElementById("nav-export").style.display   = USER==="claro" ? "" : "none";
   document.getElementById("nav-historico").style.display = USER==="claro" ? "" : "none";
   navTo("home", document.querySelector(".ni[data-page=home]"));
+  setTimeout(showAlertas, 400);
 }
 
+
+/* ============================================================
+   ALERTAS DE REVISIÓN
+   ============================================================ */
+function showAlertas(){
+  var isClaro = USER === "claro";
+  var coachs  = isClaro ? COACHS : COACHS.filter(function(r){ return r.sup === USER; });
+
+  // Filtrar los que tienen fecha de revisión
+  var conFecha = coachs.filter(function(r){ return r.fechaRev && r.fechaRev.trim(); });
+  if(!conFecha.length) return;
+
+  var hoy   = new Date(); hoy.setHours(0,0,0,0);
+
+  // Clasificar cada coaching por proximidad de fecha
+  var alertas = [];
+  conFecha.forEach(function(r){
+    var parts = r.fechaRev.split("-"); // formato yyyy-mm-dd del input[type=date]
+    if(parts.length !== 3) return;
+    var fechaRev = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+    fechaRev.setHours(0,0,0,0);
+    var diffDias = Math.round((fechaRev - hoy) / 86400000);
+
+    var tipo;
+    if(diffDias < 0)       tipo = "pasado";
+    else if(diffDias === 0) tipo = "hoy";
+    else if(diffDias <= 3)  tipo = "proxima";
+    else return; // más de 3 días → no mostrar
+
+    alertas.push({ r:r, diffDias:diffDias, tipo:tipo, fechaRev:fechaRev });
+  });
+
+  if(!alertas.length) return;
+
+  // Ordenar: hoy primero, luego próximas, luego pasadas
+  var orden = {hoy:0, proxima:1, pasado:2};
+  alertas.sort(function(a,b){
+    if(orden[a.tipo] !== orden[b.tipo]) return orden[a.tipo]-orden[b.tipo];
+    return a.diffDias - b.diffDias;
+  });
+
+  var body = document.getElementById("modal-alertas-body");
+  var html = "";
+
+  if(alertas.length === 0){
+    html = '<p style="color:var(--text2);text-align:center;">Sin revisiones pendientes.</p>';
+  } else {
+    html += '<p style="font-size:13px;color:var(--text2);margin-bottom:.75rem;">Tenés <strong>'+alertas.length+'</strong> revisión'+( alertas.length!==1?"es":"")+" pendiente"+(alertas.length!==1?"s":"")+':</p>';
+
+    alertas.forEach(function(a){
+      var r = a.r;
+      var supLabel = SUPERVISORES[r.sup] || r.sup;
+      var fechaFmt = a.fechaRev.toLocaleDateString("es-AR");
+      var diffTxt  = a.diffDias === 0 ? "Hoy" : a.diffDias < 0 ? "Hace "+Math.abs(a.diffDias)+" día"+(Math.abs(a.diffDias)!==1?"s":"") : "En "+a.diffDias+" día"+(a.diffDias!==1?"s":"");
+
+      html += '<div class="alerta-item '+a.tipo+'">' +
+        '<div class="alerta-vendedor">👤 '+r.vendedor+'</div>' +
+        (isClaro ? '<div class="alerta-sup">Supervisor: '+supLabel+'</div>' : '') +
+        '<div class="alerta-tipo">Coaching: '+(r.tipos||"General")+(r.resultado?' · '+r.resultado:'')+'</div>' +
+        (r.revision ? '<div style="font-size:12px;color:var(--text2);margin-top:.2rem;">A revisar: '+r.revision+'</div>' : '') +
+        '<div class="alerta-fecha '+a.tipo+'">📅 '+fechaFmt+' — '+diffTxt+'</div>' +
+      '</div>';
+    });
+  }
+
+  body.innerHTML = html;
+  document.getElementById("modal-alertas").style.display = "flex";
+}
+
+function cerrarAlertas(){
+  document.getElementById("modal-alertas").style.display = "none";
+}
 
 function goNav(page){
   var btn = document.querySelector('.ni[data-page='+page+']');
