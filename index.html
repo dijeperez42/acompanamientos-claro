@@ -254,6 +254,23 @@ a{color:var(--red);}
 .alerta-fecha.hoy{background:#fef2f2;color:var(--bad);}
 .alerta-fecha.pasado{background:#f3f4f6;color:#6b7280;}
 .alerta-sup{font-size:11px;color:var(--text2);margin-top:.2rem;}
+/* ===== ADMIN ===== */
+.admin-list-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.6rem .75rem;background:var(--bg);border-radius:var(--rs);
+  margin-bottom:.35rem;font-size:13px;
+}
+.admin-list-item span{flex:1;}
+.btn-del{background:none;border:none;color:var(--bad);cursor:pointer;font-size:20px;padding:0 4px;line-height:1;}
+.admin-add-row{display:flex;gap:.4rem;margin-top:.5rem;flex-wrap:wrap;}
+.admin-add-row input,.admin-add-row select{
+  flex:1;min-width:90px;padding:9px;border-radius:var(--rs);
+  border:1.5px solid var(--border);background:var(--white);color:var(--text);font-size:13px;
+}
+.btn-add{padding:9px 14px;border:none;border-radius:var(--rs);background:var(--red);color:#fff;font-weight:700;cursor:pointer;font-size:13px;white-space:nowrap;}
+.btn-danger{width:100%;padding:12px;border:2px solid var(--bad);border-radius:var(--rs);background:#fff;color:var(--bad);font-weight:700;cursor:pointer;font-size:14px;margin-bottom:.5rem;}
+.btn-danger:hover{background:var(--bad);color:#fff;}
+
 @media(min-width:640px){
   .stat-grid{grid-template-columns:repeat(4,1fr);}
   .page{padding:1.25rem 1.5rem 90px;}
@@ -297,6 +314,7 @@ a{color:var(--red);}
   <div class="page" id="pg-coaching"></div>
   <div class="page" id="pg-registros"></div>
   <div class="page" id="pg-historico"></div>
+  <div class="page" id="pg-admin"></div>
 
   <!-- Nav inferior -->
   <nav class="bnav" id="bnav">
@@ -318,6 +336,9 @@ a{color:var(--red);}
     <button class="ni" id="nav-export" onclick="exportExcel()" style="display:none;">
       <span class="ico">📊</span><span class="ico-label">Excel</span>
     </button>
+    <button class="ni" id="nav-admin" data-page="admin" onclick="navTo('admin',this)" style="display:none;">
+      <span class="ico">⚙️</span><span class="ico-label">Admin</span>
+    </button>
   </nav>
   <!-- Modal alertas -->
   <div id="modal-alertas" class="modal-overlay" style="display:none;">
@@ -336,32 +357,91 @@ a{color:var(--red);}
 /* ============================================================
    DATOS BASE
    ============================================================ */
-var VENDEDORES = {
-  hugo:     ["Cisterna Camila","Rodriguez Maria Del Rosario","Santana Mayra Belen",
-             "Marcelo Mussatti","Albornoz Andres","Castro Mauro","Calvo Sofia Giselle","Hidalgo Eduardo"],
-  bernarda: ["Garcia Ignacio Ariel","Alma Gloria Eliana","Picon Pamela Belen",
-             "Garcia Angeles Ivonne","Rivero Beatriz","Araya Fernando","Veron Romina",
-             "Ruiz Luz Martina","Toro Fabian","Guevara Hugo","Cisterna Noelia"],
-  franco:   ["Pia Ferrari","Jose Galvan","Joaquin Pringles","Josue Elizondo"]
+// ── Datos de configuración persistidos en localStorage ──
+var DEFAULT_CONFIG = {
+  admin: { nombre:"Admin Principal", usuario:"admin", pass:"admin2024" },
+  supervisoresClaro: {
+    claro: { nombre:"Diego Perez", usuario:"diego", pass:"claro2024", terrenos:["hugo","bernarda","franco"] }
+  },
+  supervisoresTerreno: {
+    hugo:     { nombre:"Hugo Orelo",     usuario:"hugo",     pass:"hugo2024",     claroKey:"claro" },
+    bernarda: { nombre:"Bernarda Ponce", usuario:"bernarda", pass:"bernarda2024", claroKey:"claro" },
+    franco:   { nombre:"Franco Tolaba",  usuario:"franco",   pass:"franco2024",   claroKey:"claro" }
+  },
+  vendedores: {
+    hugo:     ["Cisterna Camila","Rodriguez Maria Del Rosario","Santana Mayra Belen",
+               "Marcelo Mussatti","Albornoz Andres","Castro Mauro","Calvo Sofia Giselle","Hidalgo Eduardo"],
+    bernarda: ["Garcia Ignacio Ariel","Alma Gloria Eliana","Picon Pamela Belen",
+               "Garcia Angeles Ivonne","Rivero Beatriz","Araya Fernando","Veron Romina",
+               "Ruiz Luz Martina","Toro Fabian","Guevara Hugo","Cisterna Noelia"],
+    franco:   ["Pia Ferrari","Jose Galvan","Joaquin Pringles","Josue Elizondo"]
+  }
 };
 
-var SUPERVISORES = {
-  hugo:     "Hugo Orelo",
-  bernarda: "Bernarda Ponce",
-  franco:   "Franco Tolaba",
-  claro:    "Diego Perez"
-};
+function loadConfig(){
+  var raw = localStorage.getItem("sc_config");
+  if(!raw) return JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+  var cfg = JSON.parse(raw);
+  if(!cfg.admin) cfg.admin = JSON.parse(JSON.stringify(DEFAULT_CONFIG.admin));
+  return cfg;
+}
+function saveConfig(cfg){
+  localStorage.setItem("sc_config", JSON.stringify(cfg));
+  reloadConfig();
+}
+function reloadConfig(){
+  var cfg = loadConfig();
+  VENDEDORES = cfg.vendedores || {};
+  SUPERVISORES = {};
+  USUARIOS = {};
+  CREDENCIALES = {};
+  if(cfg.admin){
+    SUPERVISORES["__admin__"] = cfg.admin.nombre;
+    USUARIOS["__admin__"] = { label: cfg.admin.nombre+" — Administrador", rol:"admin" };
+    CREDENCIALES[cfg.admin.usuario.toLowerCase()] = { pass: cfg.admin.pass, key:"__admin__" };
+  }
+  Object.keys(cfg.supervisoresClaro||{}).forEach(function(k){
+    var s = cfg.supervisoresClaro[k];
+    SUPERVISORES[k] = s.nombre;
+    USUARIOS[k] = { label: s.nombre+" — Supervisor Claro", rol:"claro" };
+    CREDENCIALES[s.usuario.toLowerCase()] = { pass: s.pass, key: k };
+  });
+  Object.keys(cfg.supervisoresTerreno||{}).forEach(function(k){
+    var s = cfg.supervisoresTerreno[k];
+    SUPERVISORES[k] = s.nombre;
+    USUARIOS[k] = { label: s.nombre+" — Supervisor Terreno", rol:"terreno" };
+    CREDENCIALES[s.usuario.toLowerCase()] = { pass: s.pass, key: k };
+  });
+}
 
-var USUARIOS = {
-  claro:    { label:"Diego Perez — Supervisor Claro",    rol:"claro"    },
-  hugo:     { label:"Hugo Orelo — Supervisor Terreno",   rol:"terreno"  },
-  bernarda: { label:"Bernarda Ponce — Supervisor Terreno",rol:"terreno" },
-  franco:   { label:"Franco Tolaba — Supervisor Terreno",rol:"terreno" }
-};
+function misTerrenos(){
+  var cfg = loadConfig();
+  if(ROL==="admin")   return Object.keys(cfg.supervisoresTerreno||{});
+  if(ROL==="claro")   return (cfg.supervisoresClaro[USER]||{}).terrenos||[];
+  if(ROL==="terreno") return [USER];
+  return [];
+}
+function misAcomps(){
+  var t = misTerrenos();
+  if(ROL==="terreno") return ACOMPS.filter(function(r){ return r.sup===USER; });
+  return ACOMPS.filter(function(r){ return t.indexOf(r.sup)>=0; });
+}
+function misCoachs(){
+  var t = misTerrenos();
+  if(ROL==="terreno") return COACHS.filter(function(r){ return r.sup===USER; });
+  return COACHS.filter(function(r){ return t.indexOf(r.sup)>=0; });
+}
+
+var VENDEDORES = {};
+var SUPERVISORES = {};
+var USUARIOS = {};
+var CREDENCIALES = {};
+reloadConfig();
 
 var USER   = null;
-var ACOMPS = JSON.parse(localStorage.getItem("sc_acomps")   || "[]");
-var COACHS = JSON.parse(localStorage.getItem("sc_coachs")   || "[]");
+var ROL    = null;
+var ACOMPS = JSON.parse(localStorage.getItem("sc_acomps") || "[]");
+var COACHS = JSON.parse(localStorage.getItem("sc_coachs") || "[]");
 
 function save(){
   localStorage.setItem("sc_acomps", JSON.stringify(ACOMPS));
@@ -377,25 +457,21 @@ function pct(n, total){ return total ? Math.round(n/total*100) : 0; }
 /* ============================================================
    LOGIN
    ============================================================ */
-var CREDENCIALES = {
-  diego:    { pass:"claro2024",    key:"claro"    },
-  hugo:     { pass:"hugo2024",     key:"hugo"     },
-  bernarda: { pass:"bernarda2024", key:"bernarda" },
-  franco:   { pass:"franco2024",   key:"franco"   }
-};
-
 function doLogin(){
   var u    = (document.getElementById("login-user").value||"").trim().toLowerCase();
   var pass = document.getElementById("login-pass").value;
   var cred = CREDENCIALES[u];
   if(!cred || cred.pass !== pass){ alert("Usuario o contraseña incorrectos"); return; }
   USER = cred.key;
+  ROL  = USUARIOS[USER].rol;
   document.getElementById("pg-login").style.display = "none";
   document.getElementById("pg-app").style.display   = "block";
   document.getElementById("topbar-user-label").textContent = USUARIOS[USER].label;
   // Excel solo para claro
-  document.getElementById("nav-export").style.display   = USER==="claro" ? "" : "none";
-  document.getElementById("nav-historico").style.display = USER==="claro" ? "" : "none";
+  var canManage = (ROL==="admin"||ROL==="claro");
+  document.getElementById("nav-export").style.display    = canManage ? "" : "none";
+  document.getElementById("nav-historico").style.display = canManage ? "" : "none";
+  document.getElementById("nav-admin").style.display     = canManage ? "" : "none";
   navTo("home", document.querySelector(".ni[data-page=home]"));
   setTimeout(showAlertas, 400);
 }
@@ -405,8 +481,7 @@ function doLogin(){
    ALERTAS DE REVISIÓN
    ============================================================ */
 function showAlertas(){
-  var isClaro = USER === "claro";
-  var coachs  = isClaro ? COACHS : COACHS.filter(function(r){ return r.sup === USER; });
+  var coachs  = misCoachs();
 
   // Filtrar los que tienen fecha de revisión
   var conFecha = coachs.filter(function(r){ return r.fechaRev && r.fechaRev.trim(); });
@@ -451,6 +526,7 @@ function showAlertas(){
 
     alertas.forEach(function(a){
       var r = a.r;
+      var isClaro = (ROL==="admin"||ROL==="claro");
       var supLabel = SUPERVISORES[r.sup] || r.sup;
       var fechaFmt = a.fechaRev.toLocaleDateString("es-AR");
       var diffTxt  = a.diffDias === 0 ? "Hoy" : a.diffDias < 0 ? "Hace "+Math.abs(a.diffDias)+" día"+(Math.abs(a.diffDias)!==1?"s":"") : "En "+a.diffDias+" día"+(a.diffDias!==1?"s":"");
@@ -490,7 +566,7 @@ function doLogout(){
    NAV
    ============================================================ */
 function navTo(page, btn){
-  ["home","acomp","coaching","registros","historico"].forEach(function(p){
+  ["home","acomp","coaching","registros","historico","admin"].forEach(function(p){
     document.getElementById("pg-"+p).classList.remove("show");
   });
   document.querySelectorAll(".ni").forEach(function(b){ b.classList.remove("active"); });
@@ -501,7 +577,8 @@ function navTo(page, btn){
   if(page==="acomp")     renderAcomp();
   if(page==="coaching")  renderCoaching();
   if(page==="registros") renderRegistros();
-  if(page==="historico") { if(USER==="claro") renderHistorico(); return; }
+  if(page==="historico") { if(ROL==="admin"||ROL==="claro") renderHistorico(); return; }
+  if(page==="admin")     { if(ROL==="admin"||ROL==="claro") renderAdmin(); return; }
 }
 
 /* ============================================================
@@ -526,9 +603,9 @@ function badgeClass(val){
    ============================================================ */
 function renderHome(){
   var pg = document.getElementById("pg-home");
-  var isClaro = USER === "claro";
-  var myAcomps = isClaro ? ACOMPS : ACOMPS.filter(function(r){ return r.sup===USER; });
-  var myCoachs = isClaro ? COACHS : COACHS.filter(function(r){ return r.sup===USER; });
+  var isClaro = (ROL==="admin"||ROL==="claro");
+  var myAcomps = misAcomps();
+  var myCoachs = misCoachs();
 
   var total = myAcomps.length;
   // helpers para normalizar valores guardados de distintos formularios
@@ -569,7 +646,7 @@ function renderHome(){
   // Saludo
   html += '<div class="card" style="background:var(--red);border:none;color:#fff;margin-bottom:1rem;">' +
     '<div style="font-size:18px;font-weight:800;margin-bottom:4px;">Hola, ' + SUPERVISORES[USER].split(" ")[0] + ' 👋</div>' +
-    '<div style="font-size:13px;opacity:.85;">' + todayStr() + (isClaro ? " · Vista gerencial" : " · Supervisor Terreno") + '</div>' +
+    '<div style="font-size:13px;opacity:.85;">' + todayStr() + (ROL==="admin" ? " · Administrador" : isClaro ? " · Supervisor Claro" : " · Supervisor Terreno") + '</div>' +
   '</div>';
 
   // Stats principales
@@ -601,7 +678,7 @@ function renderHome(){
   // Para Claro: tabla por supervisor
   if(isClaro){
     html += '<div class="card"><div class="card-title"><span class="dot"></span>Por Supervisor</div>';
-    ["hugo","bernarda","franco"].forEach(function(s){
+    misTerrenos().forEach(function(s){
       var sa = ACOMPS.filter(function(r){ return r.sup===s; });
       var sc = COACHS.filter(function(r){ return r.sup===s; });
       var sb = sa.filter(function(r){
@@ -664,7 +741,7 @@ var ACOMP_STATE = {};
 
 function renderAcomp(){
   var pg = document.getElementById("pg-acomp");
-  var isClaro = USER==="claro";
+  var isClaro = (ROL==="admin"||ROL==="claro");
   var vends = isClaro
     ? [].concat.apply([], Object.values(VENDEDORES))
     : (VENDEDORES[USER]||[]);
@@ -822,7 +899,7 @@ function getEval(id){
 }
 
 function saveAcomp(){
-  var isClaro = USER === "claro";
+  var isClaro = (ROL === "admin"||ROL==="claro");
   var sup  = isClaro ? (document.getElementById("a-sup")||{}).value||"" : USER;
   var vend = (document.getElementById("a-vend")||{}).value||"";
   if(!vend){ alert("Seleccioná un vendedor"); return; }
@@ -861,7 +938,7 @@ function saveAcomp(){
    ============================================================ */
 function renderCoaching(){
   var pg = document.getElementById("pg-coaching");
-  var isClaro = USER==="claro";
+  var isClaro = (ROL==="admin"||ROL==="claro");
   var vends = isClaro
     ? [].concat.apply([], Object.values(VENDEDORES))
     : (VENDEDORES[USER]||[]);
@@ -973,10 +1050,10 @@ function regTab(tab){
 function renderRegContent(){
   var el = document.getElementById("reg-content");
   if(!el) return;
-  var isClaro = USER==="claro";
+  var isClaro = (ROL==="admin"||ROL==="claro");
 
   if(REG_TAB==="acomp"){
-    var list = isClaro ? ACOMPS : ACOMPS.filter(function(r){ return r.sup===USER; });
+    var list = misAcomps();
     if(list.length===0){
       el.innerHTML = '<div class="card" style="color:var(--text2);text-align:center;">Sin acompañamientos registrados</div>';
       return;
@@ -1042,7 +1119,7 @@ function renderRegContent(){
     });
 
   } else {
-    var list2 = isClaro ? COACHS : COACHS.filter(function(r){ return r.sup===USER; });
+    var list2 = misCoachs();
     if(list2.length===0){
       el.innerHTML = '<div class="card" style="color:var(--text2);text-align:center;">Sin coachings registrados</div>';
       return;
@@ -1127,10 +1204,8 @@ function toggleDetail(id){
    ============================================================ */
 function renderHistorico(){
   var pg = document.getElementById("pg-historico");
-  var isClaro = USER === "claro";
-
-  var myAcomps = isClaro ? ACOMPS : ACOMPS.filter(function(r){ return r.sup===USER; });
-  var myCoachs = isClaro ? COACHS : COACHS.filter(function(r){ return r.sup===USER; });
+  var myAcomps = misAcomps();
+  var myCoachs = misCoachs();
 
   // Parsear fecha "dd/mm/aaaa" → clave "mm/aaaa"
   function mesKey(fechaStr){
@@ -1317,6 +1392,275 @@ function renderHistorico(){
   }
 
   pg.innerHTML = html;
+}
+
+/* ============================================================
+   PANEL ADMIN (solo Supervisor Claro)
+   ============================================================ */
+function renderAdmin(){
+  if(ROL!=="admin"&&ROL!=="claro") return;
+  var pg  = document.getElementById("pg-admin");
+  var cfg = loadConfig();
+  var isAdmin = (ROL==="admin");
+
+  // Terrenos visibles para este usuario
+  var terrenosVisibles = isAdmin
+    ? Object.keys(cfg.supervisoresTerreno||{})
+    : ((cfg.supervisoresClaro[USER]||{}).terrenos||[]);
+
+  // ── Supervisores Terreno ──
+  var supTerrRows = terrenosVisibles.map(function(k){
+    var s = cfg.supervisoresTerreno[k]||{};
+    return '<div class="admin-list-item">' +
+      '<span>'+s.nombre+' <small style="color:var(--text2);">(usuario: '+s.usuario+' / pass: '+s.pass+')</small></span>' +
+      '<button class="btn-del" data-key="'+k+'" onclick="adminDelSupTerreno(this.dataset.key)" title="Eliminar">×</button>' +
+    '</div>';
+  }).join("");
+
+  // ── Supervisores Claro (solo admin) ──
+  var supClaroSection = "";
+  if(isAdmin){
+    var supClaroRows = Object.keys(cfg.supervisoresClaro||{}).map(function(k){
+      var s = cfg.supervisoresClaro[k];
+      return '<div class="admin-list-item">' +
+        '<span>'+s.nombre+' <small style="color:var(--text2);">(usuario: '+s.usuario+' / pass: '+s.pass+')</small></span>' +
+        (Object.keys(cfg.supervisoresClaro).length>1
+          ? '<button class="btn-del" data-key="'+k+'" onclick="adminDelSupClaro(this.dataset.key)" title="Eliminar">×</button>'
+          : '<span style="font-size:11px;color:var(--text2);">mínimo 1</span>') +
+      '</div>';
+    }).join("");
+    supClaroSection =
+      '<div class="card">' +
+        '<div class="card-title"><span class="dot"></span>Supervisores Claro</div>' +
+        supClaroRows +
+        '<div class="admin-add-row" style="flex-wrap:wrap;gap:.3rem;">' +
+          '<input type="text" id="nsc-nombre" placeholder="Nombre completo" style="flex:2;min-width:120px;">' +
+          '<input type="text" id="nsc-user"   placeholder="Usuario">' +
+          '<input type="text" id="nsc-pass"   placeholder="Contraseña">' +
+          '<button class="btn-add" onclick="adminAddSupClaro()">+ Agregar</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  // ── Admin credentials (solo admin puede cambiar) ──
+  var adminSection = "";
+  if(isAdmin){
+    adminSection =
+      '<div class="card">' +
+        '<div class="card-title"><span class="dot" style="background:#7c3aed;"></span>Usuario Admin</div>' +
+        '<div class="admin-list-item">' +
+          '<span>'+cfg.admin.nombre+' <small style="color:var(--text2);">(usuario: '+cfg.admin.usuario+' / pass: '+cfg.admin.pass+')</small></span>' +
+        '</div>' +
+        '<div class="admin-add-row" style="flex-wrap:wrap;gap:.3rem;">' +
+          '<input type="text" id="adm-pass" placeholder="Nueva contraseña admin">' +
+          '<button class="btn-add" onclick="adminCambiarPassAdmin()">Cambiar</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  // ── Vendedores ──
+  var vendSections = terrenosVisibles.map(function(k){
+    var s = cfg.supervisoresTerreno[k]||{};
+    var vends = cfg.vendedores[k]||[];
+    var vendRows = vends.map(function(v,i){
+      return '<div class="admin-list-item">' +
+        '<span>'+v+'</span>' +
+        '<button class="btn-del" data-sup="'+k+'" data-idx="'+i+'" onclick="adminDelVendedor(this.dataset.sup,parseInt(this.dataset.idx))" title="Eliminar">×</button>' +
+      '</div>';
+    }).join("");
+    return '<div class="card" style="margin-bottom:.6rem;">' +
+      '<div class="card-title"><span class="dot"></span>'+(s.nombre||k)+'</div>' +
+      (vendRows||'<div style="font-size:12px;color:var(--text2);">Sin vendedores</div>') +
+      '<div class="admin-add-row">' +
+        '<input type="text" id="nv-'+k+'" placeholder="Nombre del vendedor">' +
+        '<button class="btn-add" data-key="'+k+'" onclick="adminAddVendedor(this.dataset.key)">+ Agregar</button>' +
+      '</div>' +
+    '</div>';
+  }).join("");
+
+  // ── Asignar terreno a claro (solo admin) ──
+  var asignarSection = "";
+  if(isAdmin && Object.keys(cfg.supervisoresClaro).length>0){
+    var claroOpts = Object.keys(cfg.supervisoresClaro).map(function(k){
+      return '<option value="'+k+'">'+(cfg.supervisoresClaro[k]||{}).nombre+'</option>';
+    }).join("");
+    var terrOpts = Object.keys(cfg.supervisoresTerreno||{}).map(function(k){
+      return '<option value="'+k+'">'+(cfg.supervisoresTerreno[k]||{}).nombre+'</option>';
+    }).join("");
+    asignarSection =
+      '<div class="card">' +
+        '<div class="card-title"><span class="dot"></span>Asignar Terreno a Claro</div>' +
+        '<div class="admin-add-row" style="flex-wrap:wrap;">' +
+          '<select id="asig-claro" style="flex:1;min-width:120px;padding:9px;border-radius:8px;border:1.5px solid var(--border);">'+claroOpts+'</select>' +
+          '<select id="asig-terr"  style="flex:1;min-width:120px;padding:9px;border-radius:8px;border:1.5px solid var(--border);">'+terrOpts+'</select>' +
+          '<button class="btn-add" onclick="adminAsignarTerreno()">Asignar</button>' +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--text2);margin-top:.4rem;">Esto agrega el supervisor terreno al Claro seleccionado si no estaba ya asignado.</div>' +
+      '</div>';
+  }
+
+  // ── Supervisor terreno: puede agregar con asignación a claro ──
+  var addTerrForm = isAdmin
+    ? '<div class="admin-add-row" style="flex-wrap:wrap;gap:.3rem;">' +
+        '<input type="text" id="nst-nombre" placeholder="Nombre" style="flex:2;min-width:120px;">' +
+        '<input type="text" id="nst-user"   placeholder="Usuario">' +
+        '<input type="text" id="nst-pass"   placeholder="Contraseña">' +
+        '<select id="nst-claro" style="padding:9px;border-radius:8px;border:1.5px solid var(--border);">' +
+          Object.keys(cfg.supervisoresClaro||{}).map(function(k){ return '<option value="'+k+'">'+(cfg.supervisoresClaro[k]||{}).nombre+'</option>'; }).join("") +
+        '</select>' +
+        '<button class="btn-add" onclick="adminAddSupTerreno()">+ Agregar</button>' +
+      '</div>'
+    : '<div class="admin-add-row" style="flex-wrap:wrap;gap:.3rem;">' +
+        '<input type="text" id="nst-nombre" placeholder="Nombre" style="flex:2;min-width:120px;">' +
+        '<input type="text" id="nst-user"   placeholder="Usuario">' +
+        '<input type="text" id="nst-pass"   placeholder="Contraseña">' +
+        '<button class="btn-add" onclick="adminAddSupTerreno()">+ Agregar</button>' +
+      '</div>';
+
+  pg.innerHTML =
+    '<div class="card-title" style="font-size:16px;font-weight:800;color:var(--red);margin-bottom:.75rem;">⚙️ Administración</div>' +
+    (isAdmin ? adminSection : "") +
+    (isAdmin ? supClaroSection : "") +
+    asignarSection +
+
+    '<div class="card">' +
+      '<div class="card-title"><span class="dot"></span>Supervisores Terreno</div>' +
+      (supTerrRows||'<div style="font-size:12px;color:var(--text2);">Sin supervisores terreno</div>') +
+      addTerrForm +
+    '</div>' +
+
+    '<div class="card-title" style="margin:1rem 0 .5rem;font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;">Vendedores por supervisor</div>' +
+    (vendSections||'<div class="card" style="color:var(--text2);">Sin supervisores terreno asignados</div>') +
+
+    '<div class="card" style="margin-top:1rem;">' +
+      '<div class="card-title"><span class="dot" style="background:var(--bad);"></span>Limpiar datos</div>' +
+      '<p style="font-size:12px;color:var(--text2);margin-bottom:.75rem;">Elimina registros de forma permanente. Usuarios y vendedores no se ven afectados.</p>' +
+      '<button class="btn-danger" data-tipo="acomps" onclick="adminLimpiar(this.dataset.tipo)">🗑 Limpiar acompañamientos</button>' +
+      '<button class="btn-danger" data-tipo="coachs" onclick="adminLimpiar(this.dataset.tipo)">🗑 Limpiar coachings</button>' +
+      (isAdmin ? '<button class="btn-danger" data-tipo="todo" onclick="adminLimpiar(this.dataset.tipo)" style="border-color:#7f1d1d;color:#7f1d1d;">🗑 Limpiar TODO</button>' : "") +
+    '</div>';
+}
+
+// ── Agregar / eliminar Supervisores Terreno ──
+function adminAsignarTerreno(){
+  var claroKey = (document.getElementById("asig-claro")||{}).value;
+  var terrKey  = (document.getElementById("asig-terr")||{}).value;
+  if(!claroKey||!terrKey){ alert("Seleccioná Claro y Terreno"); return; }
+  var cfg = loadConfig();
+  cfg.supervisoresClaro[claroKey].terrenos = cfg.supervisoresClaro[claroKey].terrenos||[];
+  if(cfg.supervisoresClaro[claroKey].terrenos.indexOf(terrKey)>=0){
+    alert("Ya está asignado"); return;
+  }
+  cfg.supervisoresClaro[claroKey].terrenos.push(terrKey);
+  if(cfg.supervisoresTerreno[terrKey]) cfg.supervisoresTerreno[terrKey].claroKey = claroKey;
+  saveConfig(cfg);
+  alert("Asignado correctamente ✓");
+  renderAdmin();
+}
+
+function adminCambiarPassAdmin(){
+  var newPass = (document.getElementById("adm-pass")||{}).value||"";
+  if(!newPass||newPass.length<4){ alert("La contraseña debe tener al menos 4 caracteres"); return; }
+  var cfg = loadConfig();
+  cfg.admin.pass = newPass;
+  saveConfig(cfg);
+  alert("Contraseña del admin actualizada ✓");
+  renderAdmin();
+}
+
+function adminAddSupTerreno(){
+  var nombre = (document.getElementById("nst-nombre").value||"").trim();
+  var user   = (document.getElementById("nst-user").value||"").trim().toLowerCase();
+  var pass   = (document.getElementById("nst-pass").value||"").trim();
+  if(!nombre||!user||!pass){ alert("Completá nombre, usuario y contraseña"); return; }
+  var cfg = loadConfig();
+  var key = user.replace(/[^a-z0-9]/g,"");
+  if(cfg.supervisoresTerreno[key]||cfg.supervisoresClaro[key]){ alert("Ese usuario ya existe"); return; }
+  // Determinar a qué claro asignar
+  var claroKey = ROL==="admin"
+    ? ((document.getElementById("nst-claro")||{}).value||Object.keys(cfg.supervisoresClaro)[0])
+    : USER;
+  cfg.supervisoresTerreno[key] = { nombre:nombre, usuario:user, pass:pass, claroKey:claroKey };
+  cfg.vendedores[key] = [];
+  if(cfg.supervisoresClaro[claroKey]){
+    cfg.supervisoresClaro[claroKey].terrenos = cfg.supervisoresClaro[claroKey].terrenos||[];
+    if(cfg.supervisoresClaro[claroKey].terrenos.indexOf(key)<0)
+      cfg.supervisoresClaro[claroKey].terrenos.push(key);
+  }
+  saveConfig(cfg);
+  renderAdmin();
+}
+
+function adminDelSupTerreno(key){
+  if(!confirm("¿Eliminar supervisor "+SUPERVISORES[key]+"? Sus registros históricos se conservan.")) return;
+  var cfg = loadConfig();
+  var claroKey = (cfg.supervisoresTerreno[key]||{}).claroKey;
+  delete cfg.supervisoresTerreno[key];
+  // Quitar de la lista de terrenos del claro
+  if(claroKey && cfg.supervisoresClaro[claroKey]){
+    cfg.supervisoresClaro[claroKey].terrenos = (cfg.supervisoresClaro[claroKey].terrenos||[]).filter(function(k){ return k!==key; });
+  }
+  saveConfig(cfg);
+  renderAdmin();
+}
+
+// ── Agregar / eliminar Supervisores Claro ──
+function adminAddSupClaro(){
+  var nombre = (document.getElementById("nsc-nombre").value||"").trim();
+  var user   = (document.getElementById("nsc-user").value||"").trim().toLowerCase();
+  var pass   = (document.getElementById("nsc-pass").value||"").trim();
+  if(!nombre||!user||!pass){ alert("Completá nombre, usuario y contraseña"); return; }
+  var cfg = loadConfig();
+  var key = user.replace(/[^a-z0-9]/g,"");
+  if(cfg.supervisoresClaro[key]||cfg.supervisoresTerreno[key]){ alert("Ese usuario ya existe"); return; }
+  cfg.supervisoresClaro[key] = { nombre:nombre, usuario:user, pass:pass };
+  saveConfig(cfg);
+  renderAdmin();
+}
+
+function adminDelSupClaro(key){
+  if(!confirm("¿Eliminar supervisor Claro "+SUPERVISORES[key]+"?")) return;
+  var cfg = loadConfig();
+  delete cfg.supervisoresClaro[key];
+  saveConfig(cfg);
+  renderAdmin();
+}
+
+// ── Vendedores ──
+function adminAddVendedor(supKey){
+  var input = document.getElementById("nv-"+supKey);
+  var nombre = (input ? input.value : "").trim();
+  if(!nombre){ alert("Escribí el nombre del vendedor"); return; }
+  var cfg = loadConfig();
+  if(!cfg.vendedores[supKey]) cfg.vendedores[supKey] = [];
+  if(cfg.vendedores[supKey].indexOf(nombre)>=0){ alert("Ese vendedor ya existe"); return; }
+  cfg.vendedores[supKey].push(nombre);
+  saveConfig(cfg);
+  renderAdmin();
+}
+
+function adminDelVendedor(supKey, idx){
+  var cfg = loadConfig();
+  var nombre = (cfg.vendedores[supKey]||[])[idx];
+  if(!confirm("¿Eliminar vendedor "+nombre+"? Sus registros históricos se conservan.")) return;
+  cfg.vendedores[supKey].splice(idx,1);
+  saveConfig(cfg);
+  renderAdmin();
+}
+
+// ── Limpiar datos ──
+function adminLimpiar(tipo){
+  var msgs = {
+    acomps: "¿Eliminar TODOS los acompañamientos? Esta acción no se puede deshacer.",
+    coachs: "¿Eliminar TODOS los coachings? Esta acción no se puede deshacer.",
+    todo:   "¿Eliminar TODOS los acompañamientos y coachings? Esta acción no se puede deshacer."
+  };
+  if(!confirm(msgs[tipo])) return;
+  if(tipo==="acomps"||tipo==="todo"){ ACOMPS=[]; localStorage.removeItem("sc_acomps"); }
+  if(tipo==="coachs"||tipo==="todo"){ COACHS=[]; localStorage.removeItem("sc_coachs"); }
+  save();
+  alert("Datos eliminados correctamente ✓");
+  renderAdmin();
 }
 
 function exportExcel(){
