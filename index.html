@@ -602,137 +602,132 @@ function badgeClass(val){
    HOME / DASHBOARD
    ============================================================ */
 function renderHome(){
-  var pg = document.getElementById("pg-home");
-  var isClaro = (ROL==="admin"||ROL==="claro");
+  var pg       = document.getElementById("pg-home");
+  var isClaro  = (ROL==="admin"||ROL==="claro");
   var myAcomps = misAcomps();
   var myCoachs = misCoachs();
+  var total    = myAcomps.length;
 
-  var total = myAcomps.length;
-  // helpers para normalizar valores guardados de distintos formularios
-  function isBueno(r){
-    var v = (r.calVenta||"").toLowerCase();
-    return v==="buena"||v==="bueno";
-  }
-  function isRegular(r){
-    var v = (r.calVenta||"").toLowerCase();
-    return v==="regular";
-  }
-  function isMalo(r){
-    var v = (r.calVenta||"").toLowerCase();
-    return v==="mala"||v==="malo";
-  }
-  function getSpeechEval(r){
-    return (r.speech&&r.speech.eval)||r.calVenta||"";
-  }
+  // ── Speech y Objeciones ──
+  function spEv(r){ return ((r.speech&&r.speech.eval)||r.calVenta||"").toLowerCase(); }
+  function obEv(r){ return (r.objEval||"").toLowerCase(); }
 
-  var buenos   = myAcomps.filter(isBueno).length;
-  var regulares= myAcomps.filter(isRegular).length;
-  var malos    = myAcomps.filter(isMalo).length;
-  var pctBuena = pct(buenos, total);
-
-  // Speech % — usar eval directamente ya que checks puede estar vacío
-  var speechOk = myAcomps.filter(function(r){
-    var v = getSpeechEval(r).toLowerCase();
-    return v==="bueno"||v==="buena";
-  }).length;
-  var pctSpeech = pct(speechOk, total);
-
-  // Coachings efectivos
+  var spB = myAcomps.filter(function(r){ return spEv(r)==="bueno"; }).length;
+  var spR = myAcomps.filter(function(r){ return spEv(r)==="regular"; }).length;
+  var spM = myAcomps.filter(function(r){ var v=spEv(r); return v==="malo"||v==="mala"; }).length;
+  var obB = myAcomps.filter(function(r){ return obEv(r)==="bueno"; }).length;
+  var obR = myAcomps.filter(function(r){ return obEv(r)==="regular"; }).length;
+  var obM = myAcomps.filter(function(r){ var v=obEv(r); return v==="malo"||v==="mala"; }).length;
   var coachEf = myCoachs.filter(function(r){ return r.resultado==="Positivo"; }).length;
-  var pctCoachEf = pct(coachEf, myCoachs.length);
+
+  function semColor(b,tot){
+    if(!tot) return "#9ca3af";
+    var p=b/tot*100;
+    return p>=70?"#16a34a":p>=40?"#d97706":"#dc2626";
+  }
+
+  function miniBar(b,r,m){
+    var tot=b+r+m;
+    if(!tot) return '<div style="font-size:12px;color:#9ca3af;margin-top:4px;">Sin datos</div>';
+    var pb=Math.round(b/tot*100), pr=Math.round(r/tot*100), pm=Math.round(m/tot*100);
+    return '<div style="display:flex;height:10px;border-radius:5px;overflow:hidden;background:#f3f4f6;margin:6px 0;">' +
+      (pb?'<div style="width:'+pb+'%;background:#16a34a;"></div>':'') +
+      (pr?'<div style="width:'+pr+'%;background:#d97706;"></div>':'') +
+      (pm?'<div style="width:'+pm+'%;background:#dc2626;"></div>':'') +
+    '</div>' +
+    '<div style="display:flex;gap:.75rem;font-size:12px;">' +
+      '<span style="color:#16a34a;font-weight:600;">✔ '+b+' Bueno</span>' +
+      '<span style="color:#d97706;font-weight:600;">~ '+r+' Regular</span>' +
+      '<span style="color:#dc2626;font-weight:600;">✖ '+m+' Malo</span>' +
+    '</div>';
+  }
 
   var html = "";
 
   // Saludo
   html += '<div class="card" style="background:var(--red);border:none;color:#fff;margin-bottom:1rem;">' +
-    '<div style="font-size:18px;font-weight:800;margin-bottom:4px;">Hola, ' + SUPERVISORES[USER].split(" ")[0] + ' 👋</div>' +
+    '<div style="font-size:18px;font-weight:800;margin-bottom:4px;">Hola, ' + (SUPERVISORES[USER]||"").split(" ")[0] + ' 👋</div>' +
     '<div style="font-size:13px;opacity:.85;">' + todayStr() + (ROL==="admin" ? " · Administrador" : isClaro ? " · Supervisor Claro" : " · Supervisor Terreno") + '</div>' +
   '</div>';
 
-  // Stats principales
-  html += '<div class="stat-grid">' +
-    statBox(total, "Acompañamientos") +
-    statBox(myCoachs.length, "Coachings") +
-    statBox(pctBuena+"%", "Cal. Buena") +
-    statBox(pctSpeech+"%", "Speech OK") +
+  // Totales simples
+  html += '<div class="stat-grid" style="grid-template-columns:1fr 1fr;margin-bottom:.75rem;">' +
+    '<div class="stat-box"><div class="stat-num">'+total+'</div><div class="stat-label">Acompañamientos</div></div>' +
+    '<div class="stat-box"><div class="stat-num">'+myCoachs.length+'</div><div class="stat-label">Coachings</div></div>' +
   '</div>';
 
-  // Barra distribución calidad
-  if(total > 0){
-    var pB=pct(buenos,total), pR=pct(regulares,total), pM=pct(malos,total);
-    html += '<div class="card">' +
-      '<div class="card-title"><span class="dot"></span>Calidad de Venta</div>' +
-      '<div class="stacked-bar">' +
-        '<div class="sb-g" style="width:'+pB+'%"></div>' +
-        '<div class="sb-a" style="width:'+pR+'%"></div>' +
-        '<div class="sb-r" style="width:'+pM+'%"></div>' +
-      '</div>' +
-      '<div style="display:flex;gap:1rem;font-size:12px;margin-top:.4rem;">' +
-        '<span style="color:var(--green);">● Buena '+buenos+'</span>' +
-        '<span style="color:var(--amber);">● Regular '+regulares+'</span>' +
-        '<span style="color:var(--bad);">● Mala '+malos+'</span>' +
-      '</div>' +
-    '</div>';
-  }
+  // Bloque Speech
+  html += '<div class="card">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">' +
+      '<div class="card-title" style="margin-bottom:0;"><span class="dot"></span>Speech</div>' +
+      (total ? '<span style="font-size:13px;font-weight:800;color:'+semColor(spB,total)+';">'+Math.round(spB/total*100)+'% bueno</span>' : '') +
+    '</div>' +
+    miniBar(spB,spR,spM) +
+  '</div>';
 
-  // Para Claro: tabla por supervisor
+  // Bloque Objeciones
+  html += '<div class="card">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">' +
+      '<div class="card-title" style="margin-bottom:0;"><span class="dot"></span>Rebate Objeciones</div>' +
+      (total ? '<span style="font-size:13px;font-weight:800;color:'+semColor(obB,total)+';">'+Math.round(obB/total*100)+'% bueno</span>' : '') +
+    '</div>' +
+    miniBar(obB,obR,obM) +
+  '</div>';
+
+  // Por supervisor (claro/admin)
   if(isClaro){
     html += '<div class="card"><div class="card-title"><span class="dot"></span>Por Supervisor</div>';
     misTerrenos().forEach(function(s){
-      var sa = ACOMPS.filter(function(r){ return r.sup===s; });
-      var sc = COACHS.filter(function(r){ return r.sup===s; });
-      var sb = sa.filter(function(r){
-        var v=(r.calVenta||"").toLowerCase();
-        return v==="buena"||v==="bueno";
-      }).length;
-      var spct = pct(sb, sa.length);
-      var sem = spct>=70?"s-verde":spct>=40?"s-amarillo":"s-rojo";
+      var sa = misAcomps().filter(function(r){ return r.sup===s; });
+      var sc = misCoachs().filter(function(r){ return r.sup===s; });
+      var sb = sa.filter(function(r){ return spEv(r)==="bueno"; }).length;
+      var p  = sa.length ? Math.round(sb/sa.length*100) : null;
+      var col= p===null?"#9ca3af":p>=70?"#16a34a":p>=40?"#d97706":"#dc2626";
       html += '<div class="vend-row">' +
-        '<span class="semaforo '+sem+'"></span>' +
+        '<span class="semaforo '+( p===null?"s-rojo":p>=70?"s-verde":p>=40?"s-amarillo":"s-rojo")+'"></span>' +
         '<div style="flex:1">' +
           '<div class="vend-name">'+SUPERVISORES[s]+'</div>' +
           '<div class="vend-meta">'+sa.length+' acomp · '+sc.length+' coachings</div>' +
         '</div>' +
-        '<div style="text-align:right">' +
-          '<div class="badge '+(spct>=70?"b-green":spct>=40?"b-amber":"b-red")+'">'+spct+'% buena</div>' +
-        '</div>' +
+        '<div style="font-size:13px;font-weight:800;color:'+col+';">' + (p!==null?p+"% speech":"—") + '</div>' +
       '</div>';
     });
     html += '</div>';
 
     // Coachings efectivos
     html += '<div class="card">' +
-      '<div class="card-title"><span class="dot"></span>Coachings efectivos</div>' +
-      '<div style="font-size:2rem;font-weight:800;color:var(--red);">'+pctCoachEf+'%</div>' +
-      '<div style="font-size:12px;color:var(--text2);">'+coachEf+' positivos de '+myCoachs.length+' realizados</div>' +
+      '<div class="card-title"><span class="dot"></span>Coachings Efectivos</div>' +
+      '<div style="font-size:1.6rem;font-weight:800;color:' + (coachEf>0?"#16a34a":"#9ca3af") + ';margin:.2rem 0;">' +
+        coachEf + ' / ' + myCoachs.length +
+      '</div>' +
+      '<div style="font-size:12px;color:var(--text2);">' + (myCoachs.length>0 ? pct(coachEf,myCoachs.length)+"% positivos" : "Sin coachings aún") + '</div>' +
     '</div>';
   }
 
-  // Vendedores con seguimiento
+  // Últimos vendedores
   if(myAcomps.length > 0){
-    var vendsSet = {};
-    myAcomps.forEach(function(r){ vendsSet[r.vendedor] = r; });
-    var vendList = Object.keys(vendsSet).slice(0,5);
-    html += '<div class="card"><div class="card-title"><span class="dot"></span>Vendedores con seguimiento</div>';
-    vendList.forEach(function(v){
-      var last = vendsSet[v];
-      var sem = semaforoClass(last.calVenta);
+    var seen={}, vRows=[];
+    myAcomps.slice().reverse().forEach(function(r){
+      if(!seen[r.vendedor]){ seen[r.vendedor]=r; vRows.push(r); }
+    });
+    vRows = vRows.slice(0,5);
+    html += '<div class="card"><div class="card-title"><span class="dot"></span>Últimos vendedores</div>';
+    vRows.forEach(function(r){
+      var sp=spEv(r), col=sp==="bueno"?"#16a34a":sp==="regular"?"#d97706":"#dc2626";
+      var lab=sp.charAt(0).toUpperCase()+sp.slice(1)||"—";
       html += '<div class="vend-row">' +
-        '<span class="semaforo '+sem+'"></span>' +
-        '<div class="vend-name">'+v+'</div>' +
-        '<span class="badge '+badgeClass(last.calVenta)+'">'+last.calVenta+'</span>' +
+        '<span class="semaforo '+( sp==="bueno"?"s-verde":sp==="regular"?"s-amarillo":"s-rojo")+'"></span>' +
+        '<div class="vend-name" style="flex:1;">'+r.vendedor+'</div>' +
+        '<span style="font-size:12px;font-weight:700;color:'+col+';">'+lab+'</span>' +
       '</div>';
     });
-    if(Object.keys(vendsSet).length > 5) html += '<div style="font-size:12px;color:var(--text2);margin-top:.4rem;">+ '+(Object.keys(vendsSet).length-5)+' más</div>';
     html += '</div>';
   }
 
   pg.innerHTML = html;
 }
 
-function statBox(val, label){
-  return '<div class="stat-box"><div class="stat-num">'+val+'</div><div class="stat-label">'+label+'</div></div>';
-}
+
 
 /* ============================================================
    ACOMPAÑAMIENTO — FORMULARIO
@@ -1203,465 +1198,199 @@ function toggleDetail(id){
    HISTÓRICO MENSUAL
    ============================================================ */
 function renderHistorico(){
-  var pg = document.getElementById("pg-historico");
-  var myAcomps = misAcomps();
-  var myCoachs = misCoachs();
+  if(ROL!=="admin"&&ROL!=="claro") return;
+  var pg       = document.getElementById("pg-historico");
+  var terrenos = misTerrenos();
 
-  // Parsear fecha "dd/mm/aaaa" → clave "mm/aaaa"
-  function mesKey(fechaStr){
-    if(!fechaStr) return "Sin fecha";
-    var parts = fechaStr.split("/");
-    if(parts.length===3) return parts[1]+"/"+parts[2];
-    return fechaStr;
+  function spEv(r){ return ((r.speech&&r.speech.eval)||r.calVenta||"").toLowerCase(); }
+
+  function mesKey(f){
+    if(!f) return "Sin fecha";
+    var p=f.split("/"); return p.length===3 ? p[1]+"/"+p[2] : f;
   }
-  function mesLabel(key){
-    var MESES = ["","Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-    var parts = key.split("/");
-    if(parts.length===2){
-      var m = parseInt(parts[0],10);
-      return (MESES[m]||parts[0])+" "+parts[1];
-    }
-    return key;
+  function mesLabel(k){
+    var MESES=["","Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+    var p=k.split("/");
+    return p.length===2 ? (MESES[parseInt(p[0],10)]||p[0])+" "+p[1] : k;
   }
-  function isBueno(r){
-    var v=(r.calVenta||r.speech&&r.speech.eval||"").toLowerCase();
-    return v==="bueno"||v==="buena";
+  function sortMeses(keys){
+    return keys.slice().sort(function(a,b){
+      var ap=a.split("/"),bp=b.split("/");
+      var ay=parseInt(ap[1]||0,10),by=parseInt(bp[1]||0,10);
+      var am=parseInt(ap[0]||0,10),bm=parseInt(bp[0]||0,10);
+      return ay!==by?ay-by:am-bm;
+    });
   }
 
-  // Agrupar por mes
-  var mesesMap = {};
-  myAcomps.forEach(function(r){
-    var k = mesKey(r.fecha);
-    if(!mesesMap[k]) mesesMap[k]={acomps:[],coachs:[],vendedores:{}};
-    mesesMap[k].acomps.push(r);
-    if(!mesesMap[k].vendedores[r.vendedor]) mesesMap[k].vendedores[r.vendedor]=[];
-    mesesMap[k].vendedores[r.vendedor].push(r);
-  });
-  myCoachs.forEach(function(r){
-    var k = mesKey(r.fecha);
-    if(!mesesMap[k]) mesesMap[k]={acomps:[],coachs:[],vendedores:{}};
-    mesesMap[k].coachs.push(r);
-  });
+  var html = '<div class="card-title" style="font-size:16px;font-weight:800;color:var(--red);margin-bottom:.75rem;">📈 Histórico por Supervisor</div>';
 
-  // Ordenar meses cronológicamente
-  var mesesKeys = Object.keys(mesesMap).sort(function(a,b){
-    var ap=a.split("/"), bp=b.split("/");
-    var ay=parseInt(ap[1]||0,10), by=parseInt(bp[1]||0,10);
-    var am=parseInt(ap[0]||0,10), bm=parseInt(bp[0]||0,10);
-    return ay!==by ? ay-by : am-bm;
-  });
-
-  if(mesesKeys.length===0){
-    pg.innerHTML = '<div class="card" style="color:var(--text2);text-align:center;margin-top:2rem;">Sin datos aún. Cargá acompañamientos para ver el histórico.</div>';
+  if(!terrenos.length){
+    pg.innerHTML = html + '<div class="card" style="color:var(--text2);text-align:center;">Sin supervisores asignados.</div>';
     return;
   }
 
-  // SVG línea de tendencia (% bueno por mes)
-  var svgPoints = mesesKeys.map(function(k){
-    var m = mesesMap[k];
-    var b = m.acomps.filter(isBueno).length;
-    return pct(b, m.acomps.length);
-  });
+  terrenos.forEach(function(supKey){
+    var supNombre = SUPERVISORES[supKey]||supKey;
+    var acomps = ACOMPS.filter(function(r){ return r.sup===supKey; });
+    var coachs = COACHS.filter(function(r){ return r.sup===supKey; });
 
-  var svgW = Math.max(280, mesesKeys.length * 70);
-  var svgH = 100;
-  var padL = 32, padR = 16, padT = 14, padB = 28;
-  var chartW = svgW - padL - padR;
-  var chartH = svgH - padT - padB;
-  var n = svgPoints.length;
+    html += '<div style="background:var(--red);color:#fff;border-radius:var(--rs);padding:.6rem 1rem;font-weight:700;font-size:14px;margin-bottom:.6rem;">'+supNombre+'</div>';
 
-  function xPos(i){ return padL + (n===1 ? chartW/2 : i/(n-1)*chartW); }
-  function yPos(v){ return padT + chartH - v/100*chartH; }
+    if(!acomps.length){
+      html += '<div class="card" style="color:var(--text2);font-size:13px;margin-bottom:1rem;">Sin acompañamientos registrados.</div>';
+      return;
+    }
 
-  var pathD = svgPoints.map(function(v,i){ return (i===0?"M":"L")+xPos(i).toFixed(1)+","+yPos(v).toFixed(1); }).join(" ");
-  var areaD = pathD + " L"+xPos(n-1).toFixed(1)+","+(padT+chartH)+" L"+xPos(0).toFixed(1)+","+(padT+chartH)+" Z";
+    // Agrupar por mes
+    var mMap={};
+    acomps.forEach(function(r){
+      var k=mesKey(r.fecha);
+      if(!mMap[k]) mMap[k]={acomps:[],coachs:[]};
+      mMap[k].acomps.push(r);
+    });
+    coachs.forEach(function(r){
+      var k=mesKey(r.fecha);
+      if(!mMap[k]) mMap[k]={acomps:[],coachs:[]};
+      mMap[k].coachs.push(r);
+    });
+    var meses = sortMeses(Object.keys(mMap));
 
-  var dots = svgPoints.map(function(v,i){
-    var col = v>=70?"#16a34a":v>=40?"#d97706":"#dc2626";
-    return '<circle cx="'+xPos(i).toFixed(1)+'" cy="'+yPos(v).toFixed(1)+'" r="5" fill="'+col+'" stroke="#fff" stroke-width="1.5"/>' +
-      '<text x="'+xPos(i).toFixed(1)+'" y="'+(yPos(v)-9).toFixed(1)+'" text-anchor="middle" font-size="9" fill="'+col+'" font-weight="700" font-family="Arial">'+v+'%</text>';
-  }).join("");
+    html += '<div class="card" style="margin-bottom:.75rem;">';
+    html += '<div class="card-title"><span class="dot"></span>Resumen mensual</div>';
 
-  var xLabels = mesesKeys.map(function(k,i){
-    return '<text x="'+xPos(i).toFixed(1)+'" y="'+(svgH-4)+'" text-anchor="middle" font-size="9" fill="#888" font-family="Arial">'+mesLabel(k)+'</text>';
-  }).join("");
+    meses.forEach(function(k){
+      var m   = mMap[k];
+      var tot = m.acomps.length;
+      var spB = m.acomps.filter(function(r){ return spEv(r)==="bueno"; }).length;
+      var spR = m.acomps.filter(function(r){ return spEv(r)==="regular"; }).length;
+      var spM = m.acomps.filter(function(r){ var v=spEv(r); return v==="malo"||v==="mala"; }).length;
+      var obB = m.acomps.filter(function(r){ return (r.objEval||"").toLowerCase()==="bueno"; }).length;
+      var obR = m.acomps.filter(function(r){ return (r.objEval||"").toLowerCase()==="regular"; }).length;
+      var obM = m.acomps.filter(function(r){ var v=(r.objEval||"").toLowerCase(); return v==="malo"||v==="mala"; }).length;
 
-  // Líneas guía
-  var guides = [0,25,50,75,100].map(function(v){
-    var y = yPos(v).toFixed(1);
-    return '<line x1="'+padL+'" y1="'+y+'" x2="'+(svgW-padR)+'" y2="'+y+'" stroke="#e5e7eb" stroke-width="1"/>' +
-      '<text x="'+(padL-4)+'" y="'+(parseFloat(y)+3)+'" text-anchor="end" font-size="8" fill="#aaa" font-family="Arial">'+v+'</text>';
-  }).join("");
+      var pSp = tot ? Math.round(spB/tot*100) : null;
+      var pOb = tot ? Math.round(obB/tot*100) : null;
+      var colSp = pSp===null?"#9ca3af":pSp>=70?"#16a34a":pSp>=40?"#d97706":"#dc2626";
+      var colOb = pOb===null?"#9ca3af":pOb>=70?"#16a34a":pOb>=40?"#d97706":"#dc2626";
+      var bgSp  = pSp===null?"":pSp>=70?"#f0fdf4":pSp>=40?"#fffbeb":"#fef2f2";
+      var bgOb  = pOb===null?"":pOb>=70?"#f0fdf4":pOb>=40?"#fffbeb":"#fef2f2";
 
-  var svg = '<svg viewBox="0 0 '+svgW+' '+svgH+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;overflow:visible;">' +
-    guides +
-    '<defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e60000" stop-opacity="0.15"/><stop offset="100%" stop-color="#e60000" stop-opacity="0"/></linearGradient></defs>' +
-    '<path d="'+areaD+'" fill="url(#areaGrad)"/>' +
-    '<path d="'+pathD+'" fill="none" stroke="#e60000" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' +
-    dots + xLabels +
-  '</svg>';
+      var cEf  = m.coachs.filter(function(r){ return r.resultado==="Positivo"; }).length;
+      var cPar = m.coachs.filter(function(r){ return r.resultado==="Parcial"; }).length;
+      var cSin = m.coachs.filter(function(r){ return r.resultado==="Sin impacto"; }).length;
+      var cTot = m.coachs.length;
+      var pCEf = cTot ? Math.round(cEf/cTot*100) : null;
+      var colCEf = pCEf===null?"#9ca3af":pCEf>=70?"#16a34a":pCEf>=40?"#d97706":"#dc2626";
 
-  var html = '<div class="card-title" style="font-size:16px;font-weight:800;color:var(--red);margin-bottom:.75rem;">📈 Histórico Mensual</div>';
+      html += '<div style="border-bottom:2px solid var(--red);padding:.5rem 0 .25rem;margin:.75rem 0 .5rem;">' +
+        '<span style="font-size:15px;font-weight:800;color:var(--red);">'+mesLabel(k)+'</span>' +
+      '</div>';
 
-  // Gráfico tendencia
-  html += '<div class="card">' +
-    '<div class="card-title"><span class="dot"></span>Tendencia — % Speech Bueno</div>' +
-    '<div style="overflow-x:auto;">'+svg+'</div>' +
-    '<div style="display:flex;gap:1rem;justify-content:center;margin-top:.5rem;font-size:11px;">' +
-      '<span style="color:var(--green);">● ≥70% Bueno</span>' +
-      '<span style="color:var(--amber);">● 40-69%</span>' +
-      '<span style="color:var(--bad);">● <40%</span>' +
-    '</div>' +
-  '</div>';
+      // ── Acompañamientos ──
+      html += '<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem;">Acompañamientos — '+tot+' realizados</div>';
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.75rem;">';
 
-  // Tabla comparativa por mes
-  html += '<div class="card"><div class="card-title"><span class="dot"></span>Resumen mensual</div>';
-  html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">';
-  html += '<tr style="border-bottom:2px solid var(--border);">' +
-    '<th style="text-align:left;padding:6px 4px;color:var(--text2);font-size:11px;">MES</th>' +
-    '<th style="text-align:center;padding:6px 4px;color:var(--text2);font-size:11px;">ACOMP.</th>' +
-    '<th style="text-align:center;padding:6px 4px;color:var(--text2);font-size:11px;">BUENOS</th>' +
-    '<th style="text-align:center;padding:6px 4px;color:var(--text2);font-size:11px;">COACHINGS</th>' +
-    '<th style="text-align:center;padding:6px 4px;color:var(--text2);font-size:11px;">% SPEECH</th>' +
-  '</tr>';
+      // Speech
+      html += '<div style="background:'+bgSp+';border-radius:var(--rs);padding:.75rem;border:1px solid var(--border);">' +
+        '<div style="font-size:11px;color:var(--text2);font-weight:700;margin-bottom:.3rem;">SPEECH</div>' +
+        '<div style="font-size:1.5rem;font-weight:800;color:'+colSp+';">'+(pSp!==null?pSp+"%":"—")+'</div>' +
+        '<div style="font-size:12px;margin-top:.3rem;">' +
+          '<span style="color:#16a34a;">✔ '+spB+' Bueno</span><br>' +
+          '<span style="color:#d97706;">~ '+spR+' Regular</span><br>' +
+          '<span style="color:#dc2626;">✖ '+spM+' Malo</span>' +
+        '</div>' +
+      '</div>';
 
-  mesesKeys.forEach(function(k){
-    var m = mesesMap[k];
-    var b = m.acomps.filter(isBueno).length;
-    var p = pct(b, m.acomps.length);
-    var coachEf = m.coachs.filter(function(c){ return c.resultado==="Positivo"; }).length;
-    var col = p>=70?"var(--green)":p>=40?"var(--amber)":"var(--bad)";
-    html += '<tr style="border-bottom:1px solid var(--border);">' +
-      '<td style="padding:7px 4px;font-weight:700;">'+mesLabel(k)+'</td>' +
-      '<td style="text-align:center;padding:7px 4px;">'+m.acomps.length+'</td>' +
-      '<td style="text-align:center;padding:7px 4px;color:var(--green);font-weight:700;">'+b+'</td>' +
-      '<td style="text-align:center;padding:7px 4px;">'+m.coachs.length+' <span style="color:var(--green);font-size:11px;">('+coachEf+' ef.)</span></td>' +
-      '<td style="text-align:center;padding:7px 4px;font-weight:800;color:'+col+';">'+p+'%</td>' +
-    '</tr>';
-  });
-  html += '</table></div></div>';
+      // Objeciones
+      html += '<div style="background:'+bgOb+';border-radius:var(--rs);padding:.75rem;border:1px solid var(--border);">' +
+        '<div style="font-size:11px;color:var(--text2);font-weight:700;margin-bottom:.3rem;">OBJECIONES</div>' +
+        '<div style="font-size:1.5rem;font-weight:800;color:'+colOb+';">'+(pOb!==null?pOb+"%":"—")+'</div>' +
+        '<div style="font-size:12px;margin-top:.3rem;">' +
+          '<span style="color:#16a34a;">✔ '+obB+' Bueno</span><br>' +
+          '<span style="color:#d97706;">~ '+obR+' Regular</span><br>' +
+          '<span style="color:#dc2626;">✖ '+obM+' Malo</span>' +
+        '</div>' +
+      '</div>';
 
-  // Evolución por vendedor (solo si hay varios meses)
-  if(mesesKeys.length >= 2){
-    // Juntar todos los vendedores que aparecen
-    var allVends = {};
-    myAcomps.forEach(function(r){ allVends[r.vendedor]=true; });
-    var vendList = Object.keys(allVends).sort();
+      html += '</div>';
 
-    html += '<div class="card"><div class="card-title"><span class="dot"></span>Evolución por vendedor</div>';
+      // ── Coachings ──
+      html += '<div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem;">Coachings — '+cTot+' realizados</div>';
 
-    vendList.forEach(function(vname){
-      // Para cada mes, buscar el último acomp del vendedor
-      var evol = mesesKeys.map(function(k){
-        var recs = (mesesMap[k].vendedores[vname]||[]);
-        if(!recs.length) return null;
-        var last = recs[recs.length-1];
-        var sp = (last.speech&&last.speech.eval)||last.calVenta||"";
-        return sp;
-      });
-
-      var hasData = evol.some(function(v){ return v!==null; });
-      if(!hasData) return;
-
-      html += '<div style="margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border);">';
-      html += '<div style="font-size:13px;font-weight:700;margin-bottom:.4rem;">'+vname+'</div>';
-      html += '<div style="display:flex;gap:.3rem;align-items:center;flex-wrap:wrap;">';
-
-      evol.forEach(function(v, i){
-        var col, txt;
-        if(v===null){ col="#e5e7eb"; txt="-"; }
-        else if(v.toLowerCase()==="bueno"||v.toLowerCase()==="buena"){ col="#16a34a"; txt="B"; }
-        else if(v.toLowerCase()==="regular"){ col="#d97706"; txt="R"; }
-        else{ col="#dc2626"; txt="M"; }
-
-        html += '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">' +
-          '<div style="width:32px;height:32px;border-radius:50%;background:'+col+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;">'+txt+'</div>' +
-          '<div style="font-size:9px;color:var(--text2);">'+mesLabel(mesesKeys[i])+'</div>' +
+      if(!cTot){
+        html += '<div style="font-size:13px;color:#9ca3af;margin-bottom:.75rem;">Sin coachings este mes</div>';
+      } else {
+        html += '<div style="background:#fafafa;border-radius:var(--rs);padding:.75rem;border:1px solid var(--border);margin-bottom:.75rem;">';
+        // Barra efectividad
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem;">' +
+          '<span style="font-size:13px;font-weight:700;">Efectividad</span>' +
+          '<span style="font-size:15px;font-weight:800;color:'+colCEf+';">'+(pCEf!==null?pCEf+"%":"—")+'</span>' +
+        '</div>';
+        html += '<div style="height:10px;border-radius:5px;overflow:hidden;display:flex;background:#e5e7eb;margin-bottom:.5rem;">';
+        if(cEf)  html += '<div style="width:'+Math.round(cEf/cTot*100)+'%;background:#16a34a;"></div>';
+        if(cPar) html += '<div style="width:'+Math.round(cPar/cTot*100)+'%;background:#d97706;"></div>';
+        if(cSin) html += '<div style="width:'+Math.round(cSin/cTot*100)+'%;background:#dc2626;"></div>';
+        html += '</div>';
+        html += '<div style="display:flex;gap:1rem;font-size:12px;font-weight:600;">' +
+          '<span style="color:#16a34a;">✔ '+cEf+' Positivo</span>' +
+          '<span style="color:#d97706;">~ '+cPar+' Parcial</span>' +
+          '<span style="color:#dc2626;">✖ '+cSin+' Sin impacto</span>' +
         '</div>';
 
-        // Flecha entre meses
-        if(i < evol.length-1){
-          html += '<div style="color:#ccc;font-size:14px;margin-bottom:14px;">›</div>';
+        // Tipos trabajados
+        var tiposMap={};
+        m.coachs.forEach(function(r){
+          (r.tipos||"").split(",").forEach(function(t){
+            t=t.trim(); if(t) tiposMap[t]=(tiposMap[t]||0)+1;
+          });
+        });
+        var tiposList=Object.keys(tiposMap);
+        if(tiposList.length){
+          html += '<div style="margin-top:.5rem;font-size:12px;color:var(--text2);">Temas: ' +
+            tiposList.map(function(t){ return '<strong>'+t+'</strong> ('+tiposMap[t]+')'; }).join(' · ') +
+          '</div>';
         }
-      });
-
-      html += '</div></div>';
+        html += '</div>';
+      }
     });
 
     html += '</div>';
-  }
+
+    // Evolución vendedores (si hay 2+ meses)
+    if(meses.length >= 2){
+      var vendores={};
+      acomps.forEach(function(r){ vendores[r.vendedor]=true; });
+      var vList=Object.keys(vendores).sort();
+
+      html += '<div class="card" style="margin-bottom:1rem;">';
+      html += '<div class="card-title"><span class="dot"></span>Evolución por vendedor</div>';
+
+      vList.forEach(function(vname){
+        html += '<div style="margin-bottom:.75rem;padding-bottom:.75rem;border-bottom:1px solid var(--border);">';
+        html += '<div style="font-size:13px;font-weight:700;margin-bottom:.4rem;">'+vname+'</div>';
+        html += '<div style="display:flex;gap:.25rem;align-items:center;flex-wrap:wrap;">';
+
+        meses.forEach(function(k, i){
+          var recs = mMap[k].acomps.filter(function(r){ return r.vendedor===vname; });
+          var last = recs.length ? recs[recs.length-1] : null;
+          var v    = last ? spEv(last) : null;
+          var col  = !v?"#e5e7eb":v==="bueno"?"#16a34a":v==="regular"?"#d97706":"#dc2626";
+          var txt  = !v?"–":v==="bueno"?"B":v==="regular"?"R":"M";
+          html += '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">' +
+            '<div style="width:30px;height:30px;border-radius:50%;background:'+col+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;">'+txt+'</div>' +
+            '<div style="font-size:9px;color:var(--text2);white-space:nowrap;">'+mesLabel(k)+'</div>' +
+          '</div>';
+          if(i<meses.length-1) html += '<div style="color:#d1d5db;font-size:16px;margin-bottom:14px;">›</div>';
+        });
+        html += '</div></div>';
+      });
+      html += '</div>';
+    }
+  });
 
   pg.innerHTML = html;
 }
 
-/* ============================================================
-   PANEL ADMIN (solo Supervisor Claro)
-   ============================================================ */
-function renderAdmin(){
-  if(ROL!=="admin"&&ROL!=="claro") return;
-  var pg  = document.getElementById("pg-admin");
-  var cfg = loadConfig();
-  var isAdmin = (ROL==="admin");
-
-  // Terrenos visibles para este usuario
-  var terrenosVisibles = isAdmin
-    ? Object.keys(cfg.supervisoresTerreno||{})
-    : ((cfg.supervisoresClaro[USER]||{}).terrenos||[]);
-
-  // ── Supervisores Terreno ──
-  var supTerrRows = terrenosVisibles.map(function(k){
-    var s = cfg.supervisoresTerreno[k]||{};
-    return '<div class="admin-list-item">' +
-      '<span>'+s.nombre+' <small style="color:var(--text2);">(usuario: '+s.usuario+' / pass: '+s.pass+')</small></span>' +
-      '<button class="btn-del" data-key="'+k+'" onclick="adminDelSupTerreno(this.dataset.key)" title="Eliminar">×</button>' +
-    '</div>';
-  }).join("");
-
-  // ── Supervisores Claro (solo admin) ──
-  var supClaroSection = "";
-  if(isAdmin){
-    var supClaroRows = Object.keys(cfg.supervisoresClaro||{}).map(function(k){
-      var s = cfg.supervisoresClaro[k];
-      return '<div class="admin-list-item">' +
-        '<span>'+s.nombre+' <small style="color:var(--text2);">(usuario: '+s.usuario+' / pass: '+s.pass+')</small></span>' +
-        (Object.keys(cfg.supervisoresClaro).length>1
-          ? '<button class="btn-del" data-key="'+k+'" onclick="adminDelSupClaro(this.dataset.key)" title="Eliminar">×</button>'
-          : '<span style="font-size:11px;color:var(--text2);">mínimo 1</span>') +
-      '</div>';
-    }).join("");
-    supClaroSection =
-      '<div class="card">' +
-        '<div class="card-title"><span class="dot"></span>Supervisores Claro</div>' +
-        supClaroRows +
-        '<div class="admin-add-row" style="flex-wrap:wrap;gap:.3rem;">' +
-          '<input type="text" id="nsc-nombre" placeholder="Nombre completo" style="flex:2;min-width:120px;">' +
-          '<input type="text" id="nsc-user"   placeholder="Usuario">' +
-          '<input type="text" id="nsc-pass"   placeholder="Contraseña">' +
-          '<button class="btn-add" onclick="adminAddSupClaro()">+ Agregar</button>' +
-        '</div>' +
-      '</div>';
-  }
-
-  // ── Admin credentials (solo admin puede cambiar) ──
-  var adminSection = "";
-  if(isAdmin){
-    adminSection =
-      '<div class="card">' +
-        '<div class="card-title"><span class="dot" style="background:#7c3aed;"></span>Usuario Admin</div>' +
-        '<div class="admin-list-item">' +
-          '<span>'+cfg.admin.nombre+' <small style="color:var(--text2);">(usuario: '+cfg.admin.usuario+' / pass: '+cfg.admin.pass+')</small></span>' +
-        '</div>' +
-        '<div class="admin-add-row" style="flex-wrap:wrap;gap:.3rem;">' +
-          '<input type="text" id="adm-pass" placeholder="Nueva contraseña admin">' +
-          '<button class="btn-add" onclick="adminCambiarPassAdmin()">Cambiar</button>' +
-        '</div>' +
-      '</div>';
-  }
-
-  // ── Vendedores ──
-  var vendSections = terrenosVisibles.map(function(k){
-    var s = cfg.supervisoresTerreno[k]||{};
-    var vends = cfg.vendedores[k]||[];
-    var vendRows = vends.map(function(v,i){
-      return '<div class="admin-list-item">' +
-        '<span>'+v+'</span>' +
-        '<button class="btn-del" data-sup="'+k+'" data-idx="'+i+'" onclick="adminDelVendedor(this.dataset.sup,parseInt(this.dataset.idx))" title="Eliminar">×</button>' +
-      '</div>';
-    }).join("");
-    return '<div class="card" style="margin-bottom:.6rem;">' +
-      '<div class="card-title"><span class="dot"></span>'+(s.nombre||k)+'</div>' +
-      (vendRows||'<div style="font-size:12px;color:var(--text2);">Sin vendedores</div>') +
-      '<div class="admin-add-row">' +
-        '<input type="text" id="nv-'+k+'" placeholder="Nombre del vendedor">' +
-        '<button class="btn-add" data-key="'+k+'" onclick="adminAddVendedor(this.dataset.key)">+ Agregar</button>' +
-      '</div>' +
-    '</div>';
-  }).join("");
-
-  // ── Asignar terreno a claro (solo admin) ──
-  var asignarSection = "";
-  if(isAdmin && Object.keys(cfg.supervisoresClaro).length>0){
-    var claroOpts = Object.keys(cfg.supervisoresClaro).map(function(k){
-      return '<option value="'+k+'">'+(cfg.supervisoresClaro[k]||{}).nombre+'</option>';
-    }).join("");
-    var terrOpts = Object.keys(cfg.supervisoresTerreno||{}).map(function(k){
-      return '<option value="'+k+'">'+(cfg.supervisoresTerreno[k]||{}).nombre+'</option>';
-    }).join("");
-    asignarSection =
-      '<div class="card">' +
-        '<div class="card-title"><span class="dot"></span>Asignar Terreno a Claro</div>' +
-        '<div class="admin-add-row" style="flex-wrap:wrap;">' +
-          '<select id="asig-claro" style="flex:1;min-width:120px;padding:9px;border-radius:8px;border:1.5px solid var(--border);">'+claroOpts+'</select>' +
-          '<select id="asig-terr"  style="flex:1;min-width:120px;padding:9px;border-radius:8px;border:1.5px solid var(--border);">'+terrOpts+'</select>' +
-          '<button class="btn-add" onclick="adminAsignarTerreno()">Asignar</button>' +
-        '</div>' +
-        '<div style="font-size:11px;color:var(--text2);margin-top:.4rem;">Esto agrega el supervisor terreno al Claro seleccionado si no estaba ya asignado.</div>' +
-      '</div>';
-  }
-
-  // ── Supervisor terreno: puede agregar con asignación a claro ──
-  var addTerrForm = isAdmin
-    ? '<div class="admin-add-row" style="flex-wrap:wrap;gap:.3rem;">' +
-        '<input type="text" id="nst-nombre" placeholder="Nombre" style="flex:2;min-width:120px;">' +
-        '<input type="text" id="nst-user"   placeholder="Usuario">' +
-        '<input type="text" id="nst-pass"   placeholder="Contraseña">' +
-        '<select id="nst-claro" style="padding:9px;border-radius:8px;border:1.5px solid var(--border);">' +
-          Object.keys(cfg.supervisoresClaro||{}).map(function(k){ return '<option value="'+k+'">'+(cfg.supervisoresClaro[k]||{}).nombre+'</option>'; }).join("") +
-        '</select>' +
-        '<button class="btn-add" onclick="adminAddSupTerreno()">+ Agregar</button>' +
-      '</div>'
-    : '<div class="admin-add-row" style="flex-wrap:wrap;gap:.3rem;">' +
-        '<input type="text" id="nst-nombre" placeholder="Nombre" style="flex:2;min-width:120px;">' +
-        '<input type="text" id="nst-user"   placeholder="Usuario">' +
-        '<input type="text" id="nst-pass"   placeholder="Contraseña">' +
-        '<button class="btn-add" onclick="adminAddSupTerreno()">+ Agregar</button>' +
-      '</div>';
-
-  pg.innerHTML =
-    '<div class="card-title" style="font-size:16px;font-weight:800;color:var(--red);margin-bottom:.75rem;">⚙️ Administración</div>' +
-    (isAdmin ? adminSection : "") +
-    (isAdmin ? supClaroSection : "") +
-    asignarSection +
-
-    '<div class="card">' +
-      '<div class="card-title"><span class="dot"></span>Supervisores Terreno</div>' +
-      (supTerrRows||'<div style="font-size:12px;color:var(--text2);">Sin supervisores terreno</div>') +
-      addTerrForm +
-    '</div>' +
-
-    '<div class="card-title" style="margin:1rem 0 .5rem;font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;">Vendedores por supervisor</div>' +
-    (vendSections||'<div class="card" style="color:var(--text2);">Sin supervisores terreno asignados</div>') +
-
-    '<div class="card" style="margin-top:1rem;">' +
-      '<div class="card-title"><span class="dot" style="background:var(--bad);"></span>Limpiar datos</div>' +
-      '<p style="font-size:12px;color:var(--text2);margin-bottom:.75rem;">Elimina registros de forma permanente. Usuarios y vendedores no se ven afectados.</p>' +
-      '<button class="btn-danger" data-tipo="acomps" onclick="adminLimpiar(this.dataset.tipo)">🗑 Limpiar acompañamientos</button>' +
-      '<button class="btn-danger" data-tipo="coachs" onclick="adminLimpiar(this.dataset.tipo)">🗑 Limpiar coachings</button>' +
-      (isAdmin ? '<button class="btn-danger" data-tipo="todo" onclick="adminLimpiar(this.dataset.tipo)" style="border-color:#7f1d1d;color:#7f1d1d;">🗑 Limpiar TODO</button>' : "") +
-    '</div>';
-}
-
-// ── Agregar / eliminar Supervisores Terreno ──
-function adminAsignarTerreno(){
-  var claroKey = (document.getElementById("asig-claro")||{}).value;
-  var terrKey  = (document.getElementById("asig-terr")||{}).value;
-  if(!claroKey||!terrKey){ alert("Seleccioná Claro y Terreno"); return; }
-  var cfg = loadConfig();
-  cfg.supervisoresClaro[claroKey].terrenos = cfg.supervisoresClaro[claroKey].terrenos||[];
-  if(cfg.supervisoresClaro[claroKey].terrenos.indexOf(terrKey)>=0){
-    alert("Ya está asignado"); return;
-  }
-  cfg.supervisoresClaro[claroKey].terrenos.push(terrKey);
-  if(cfg.supervisoresTerreno[terrKey]) cfg.supervisoresTerreno[terrKey].claroKey = claroKey;
-  saveConfig(cfg);
-  alert("Asignado correctamente ✓");
-  renderAdmin();
-}
-
-function adminCambiarPassAdmin(){
-  var newPass = (document.getElementById("adm-pass")||{}).value||"";
-  if(!newPass||newPass.length<4){ alert("La contraseña debe tener al menos 4 caracteres"); return; }
-  var cfg = loadConfig();
-  cfg.admin.pass = newPass;
-  saveConfig(cfg);
-  alert("Contraseña del admin actualizada ✓");
-  renderAdmin();
-}
-
-function adminAddSupTerreno(){
-  var nombre = (document.getElementById("nst-nombre").value||"").trim();
-  var user   = (document.getElementById("nst-user").value||"").trim().toLowerCase();
-  var pass   = (document.getElementById("nst-pass").value||"").trim();
-  if(!nombre||!user||!pass){ alert("Completá nombre, usuario y contraseña"); return; }
-  var cfg = loadConfig();
-  var key = user.replace(/[^a-z0-9]/g,"");
-  if(cfg.supervisoresTerreno[key]||cfg.supervisoresClaro[key]){ alert("Ese usuario ya existe"); return; }
-  // Determinar a qué claro asignar
-  var claroKey = ROL==="admin"
-    ? ((document.getElementById("nst-claro")||{}).value||Object.keys(cfg.supervisoresClaro)[0])
-    : USER;
-  cfg.supervisoresTerreno[key] = { nombre:nombre, usuario:user, pass:pass, claroKey:claroKey };
-  cfg.vendedores[key] = [];
-  if(cfg.supervisoresClaro[claroKey]){
-    cfg.supervisoresClaro[claroKey].terrenos = cfg.supervisoresClaro[claroKey].terrenos||[];
-    if(cfg.supervisoresClaro[claroKey].terrenos.indexOf(key)<0)
-      cfg.supervisoresClaro[claroKey].terrenos.push(key);
-  }
-  saveConfig(cfg);
-  renderAdmin();
-}
-
-function adminDelSupTerreno(key){
-  if(!confirm("¿Eliminar supervisor "+SUPERVISORES[key]+"? Sus registros históricos se conservan.")) return;
-  var cfg = loadConfig();
-  var claroKey = (cfg.supervisoresTerreno[key]||{}).claroKey;
-  delete cfg.supervisoresTerreno[key];
-  // Quitar de la lista de terrenos del claro
-  if(claroKey && cfg.supervisoresClaro[claroKey]){
-    cfg.supervisoresClaro[claroKey].terrenos = (cfg.supervisoresClaro[claroKey].terrenos||[]).filter(function(k){ return k!==key; });
-  }
-  saveConfig(cfg);
-  renderAdmin();
-}
-
-// ── Agregar / eliminar Supervisores Claro ──
-function adminAddSupClaro(){
-  var nombre = (document.getElementById("nsc-nombre").value||"").trim();
-  var user   = (document.getElementById("nsc-user").value||"").trim().toLowerCase();
-  var pass   = (document.getElementById("nsc-pass").value||"").trim();
-  if(!nombre||!user||!pass){ alert("Completá nombre, usuario y contraseña"); return; }
-  var cfg = loadConfig();
-  var key = user.replace(/[^a-z0-9]/g,"");
-  if(cfg.supervisoresClaro[key]||cfg.supervisoresTerreno[key]){ alert("Ese usuario ya existe"); return; }
-  cfg.supervisoresClaro[key] = { nombre:nombre, usuario:user, pass:pass };
-  saveConfig(cfg);
-  renderAdmin();
-}
-
-function adminDelSupClaro(key){
-  if(!confirm("¿Eliminar supervisor Claro "+SUPERVISORES[key]+"?")) return;
-  var cfg = loadConfig();
-  delete cfg.supervisoresClaro[key];
-  saveConfig(cfg);
-  renderAdmin();
-}
-
-// ── Vendedores ──
-function adminAddVendedor(supKey){
-  var input = document.getElementById("nv-"+supKey);
-  var nombre = (input ? input.value : "").trim();
-  if(!nombre){ alert("Escribí el nombre del vendedor"); return; }
-  var cfg = loadConfig();
-  if(!cfg.vendedores[supKey]) cfg.vendedores[supKey] = [];
-  if(cfg.vendedores[supKey].indexOf(nombre)>=0){ alert("Ese vendedor ya existe"); return; }
-  cfg.vendedores[supKey].push(nombre);
-  saveConfig(cfg);
-  renderAdmin();
-}
-
-function adminDelVendedor(supKey, idx){
-  var cfg = loadConfig();
-  var nombre = (cfg.vendedores[supKey]||[])[idx];
-  if(!confirm("¿Eliminar vendedor "+nombre+"? Sus registros históricos se conservan.")) return;
-  cfg.vendedores[supKey].splice(idx,1);
-  saveConfig(cfg);
-  renderAdmin();
-}
-
-// ── Limpiar datos ──
-function adminLimpiar(tipo){
-  var msgs = {
-    acomps: "¿Eliminar TODOS los acompañamientos? Esta acción no se puede deshacer.",
-    coachs: "¿Eliminar TODOS los coachings? Esta acción no se puede deshacer.",
-    todo:   "¿Eliminar TODOS los acompañamientos y coachings? Esta acción no se puede deshacer."
-  };
-  if(!confirm(msgs[tipo])) return;
-  if(tipo==="acomps"||tipo==="todo"){ ACOMPS=[]; localStorage.removeItem("sc_acomps"); }
-  if(tipo==="coachs"||tipo==="todo"){ COACHS=[]; localStorage.removeItem("sc_coachs"); }
-  save();
-  alert("Datos eliminados correctamente ✓");
-  renderAdmin();
-}
 
 function exportExcel(){
   if(USER!=="claro") return;
